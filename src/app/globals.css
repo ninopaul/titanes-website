@@ -1,26 +1,217 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════════════════════
+   TITANES GRÁFICOS — "Industrial Luxury" Theme
+   Dark premium + Gold accents
+   ═══════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #0A0A0B;
+  --color-background-alt: #141416;
+  --color-foreground: #FAFAFA;
+  --color-foreground-muted: #8A8A8A;
+  --color-gold: #D4A853;
+  --color-gold-light: #E8C776;
+  --color-gold-dark: #B8923A;
+  --color-fire: #E8572A;
+  --color-surface: #1A1A1E;
+  --color-surface-light: #222226;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-gold: rgba(212, 168, 83, 0.3);
+
+  --font-display: var(--font-clash-display);
+  --font-body: var(--font-satoshi);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ─────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body), system-ui, sans-serif;
+  overflow-x: hidden;
 }
+
+::selection {
+  background: rgba(212, 168, 83, 0.3);
+  color: #FAFAFA;
+}
+
+/* ── Custom Scrollbar ────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4A853;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #E8C776;
+}
+
+/* ── Gold Glow Effects ───────────────────────────────── */
+
+.glow-gold {
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.3),
+              0 0 60px rgba(212, 168, 83, 0.1);
+}
+
+.glow-gold-intense {
+  box-shadow: 0 0 30px rgba(212, 168, 83, 0.5),
+              0 0 80px rgba(212, 168, 83, 0.2),
+              0 0 120px rgba(212, 168, 83, 0.1);
+}
+
+.text-glow-gold {
+  text-shadow: 0 0 20px rgba(212, 168, 83, 0.5),
+               0 0 40px rgba(212, 168, 83, 0.2);
+}
+
+/* ── Gold gradient text ──────────────────────────────── */
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #D4A853, #E8C776, #D4A853);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Noise Overlay ───────────────────────────────────── */
+
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Animated grid background ────────────────────────── */
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(212, 168, 83, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 168, 83, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Section divider ─────────────────────────────────── */
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.3), transparent);
+}
+
+/* ── CTA Button Pulse ────────────────────────────────── */
+
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 168, 83, 0.3),
+                0 0 60px rgba(212, 168, 83, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(212, 168, 83, 0.5),
+                0 0 80px rgba(212, 168, 83, 0.2),
+                0 0 120px rgba(212, 168, 83, 0.1);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-gold 3s ease-in-out infinite;
+}
+
+/* ── Diagonal line decoration ────────────────────────── */
+
+.diagonal-lines {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(212, 168, 83, 0.03) 10px,
+    rgba(212, 168, 83, 0.03) 11px
+  );
+}
+
+/* ── Smooth underline animation ──────────────────────── */
+
+.hover-underline {
+  position: relative;
+}
+
+.hover-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #D4A853;
+  transition: width 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.hover-underline:hover::after {
+  width: 100%;
+}
+
+/* ── Custom cursor (desktop only) ────────────────────── */
+
+@media (min-width: 1024px) and (pointer: fine) {
+  body.custom-cursor {
+    cursor: none;
+  }
+
+  body.custom-cursor a,
+  body.custom-cursor button {
+    cursor: none;
+  }
+}
+
+/* ── Loading animation ───────────────────────────────── */
+
+@keyframes draw-line {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.line-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-line 2s ease-out forwards;
+}
+
+/* ── Marquee ─────────────────────────────────────────── */
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* ── Stagger animation helpers ───────────────────────── */
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
