@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
+import storeApi from '@/lib/store-api'
 
 const BLOG_CATEGORIES = ['Todos', 'Produccion Grafica', 'Diseno', 'Materiales', 'Casos de Exito', 'Noticias']
 
@@ -79,10 +80,38 @@ export default function BlogPage() {
   const headerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(headerRef, { once: true })
   const [activeCategory, setActiveCategory] = useState('Todos')
+  const [posts, setPosts] = useState(DEMO_POSTS)
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiAvailable, setApiAvailable] = useState(false)
 
-  const filtered = activeCategory === 'Todos'
-    ? DEMO_POSTS
-    : DEMO_POSTS.filter(p => p.categoria === activeCategory)
+  useEffect(() => {
+    async function fetchPosts() {
+      setIsLoading(true)
+      try {
+        const catParam = activeCategory === 'Todos' ? undefined : activeCategory
+        const response = await storeApi.getBlogPosts({ categoria: catParam }) as any
+        const data = response?.data !== undefined ? response.data : response
+        const items = Array.isArray(data) ? data : (data?.results || [])
+        if (items.length > 0 || apiAvailable) {
+          setPosts(items)
+          setApiAvailable(true)
+        }
+      } catch {
+        if (!apiAvailable) {
+          // Fallback to demo data with local filtering
+          const filtered = activeCategory === 'Todos'
+            ? DEMO_POSTS
+            : DEMO_POSTS.filter(p => p.categoria === activeCategory)
+          setPosts(filtered)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchPosts()
+  }, [activeCategory, apiAvailable])
+
+  const filtered = posts
 
   return (
     <main className="min-h-screen bg-[#0A0A0B]">
@@ -158,7 +187,20 @@ export default function BlogPage() {
 
       {/* Posts Grid */}
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-[#111113] rounded-xl border border-white/5 overflow-hidden animate-pulse">
+                <div className="aspect-[16/9] bg-white/5" />
+                <div className="p-5 space-y-3">
+                  <div className="h-3 bg-white/5 rounded w-1/4" />
+                  <div className="h-4 bg-white/5 rounded w-3/4" />
+                  <div className="h-3 bg-white/5 rounded w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-[#8A8A8A] text-sm">No hay articulos en esta categoria</p>
           </div>

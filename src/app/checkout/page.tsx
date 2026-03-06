@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/components/store/CartProvider'
 import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 
 const DELIVERY_OPTIONS = [
   { id: 'retiro', label: 'Retiro en Tienda', desc: 'Retira tu pedido en nuestra sede', price: 0 },
@@ -36,6 +37,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('pago_movil')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderComplete, setOrderComplete] = useState(false)
+  const [orderNumber, setOrderNumber] = useState<number | null>(null)
+  const [orderError, setOrderError] = useState('')
+  const [notas, setNotas] = useState('')
+  const [bankInfo, setBankInfo] = useState(BANK_INFO)
 
   const [address, setAddress] = useState({
     direccion: '',
@@ -43,6 +48,26 @@ export default function CheckoutPage() {
     estado: '',
     referencia: '',
   })
+
+  // Load site config for bank details
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const response = await storeApi.getConfig() as any
+        const data = response?.data !== undefined ? response.data : response
+        if (data?.pago_movil || data?.transferencia || data?.zelle) {
+          setBankInfo({
+            pago_movil: data.pago_movil || BANK_INFO.pago_movil,
+            transferencia: data.transferencia || BANK_INFO.transferencia,
+            zelle: data.zelle || BANK_INFO.zelle,
+          })
+        }
+      } catch {
+        // Use hardcoded fallback
+      }
+    }
+    loadConfig()
+  }, [])
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -57,11 +82,32 @@ export default function CheckoutPage() {
 
   const handleConfirm = async () => {
     setIsSubmitting(true)
-    // Simulate order creation
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setOrderComplete(true)
-    clearCart()
-    setIsSubmitting(false)
+    setOrderError('')
+    try {
+      const orderData = {
+        items: items.map(item => ({
+          producto_id: item.productId,
+          cantidad: item.quantity,
+        })),
+        tipo_entrega: deliveryType,
+        metodo_pago: paymentMethod,
+        notas_cliente: notas || undefined,
+        ...(deliveryType === 'delivery' && {
+          direccion_envio: address.direccion,
+          ciudad_envio: address.ciudad,
+          estado_envio: address.estado,
+        }),
+      }
+      const response = await storeApi.crearPedido(orderData) as any
+      const data = response?.data !== undefined ? response.data : response
+      setOrderNumber(data?.id || data?.numero || null)
+      setOrderComplete(true)
+      clearCart()
+    } catch (err) {
+      setOrderError(err instanceof Error ? err.message : 'Error al crear el pedido. Intenta de nuevo.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (authLoading) {
@@ -106,6 +152,11 @@ export default function CheckoutPage() {
           <h1 className="text-2xl font-black text-[#FAFAFA] mb-3" style={{ fontFamily: 'var(--font-clash-display)' }}>
             Pedido Recibido
           </h1>
+          {orderNumber && (
+            <p className="text-[#D4A853] font-mono font-bold text-lg mb-2">
+              Pedido #{orderNumber}
+            </p>
+          )}
           <p className="text-[#8A8A8A] text-sm mb-6">
             Tu pedido ha sido registrado exitosamente. Te enviaremos un correo con los detalles y podras rastrear el estado desde tu cuenta.
           </p>
@@ -315,21 +366,21 @@ export default function CheckoutPage() {
                   <h3 className="text-[#FAFAFA] font-medium text-sm mb-3">Datos para el Pago</h3>
                   {paymentMethod === 'pago_movil' && (
                     <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.pago_movil.banco}</span></p>
-                      <p className="text-[#8A8A8A]">Telefono: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.pago_movil.telefono}</span></p>
-                      <p className="text-[#8A8A8A]">Cedula/RIF: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.pago_movil.cedula}</span></p>
+                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.banco}</span></p>
+                      <p className="text-[#8A8A8A]">Telefono: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.telefono}</span></p>
+                      <p className="text-[#8A8A8A]">Cedula/RIF: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.cedula}</span></p>
                     </div>
                   )}
                   {paymentMethod === 'transferencia' && (
                     <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.transferencia.banco}</span></p>
-                      <p className="text-[#8A8A8A]">Cuenta: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.transferencia.cuenta}</span></p>
-                      <p className="text-[#8A8A8A]">RIF: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.transferencia.rif}</span></p>
+                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.banco}</span></p>
+                      <p className="text-[#8A8A8A]">Cuenta: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.cuenta}</span></p>
+                      <p className="text-[#8A8A8A]">RIF: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.rif}</span></p>
                     </div>
                   )}
                   {paymentMethod === 'zelle' && (
                     <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Email: <span className="text-[#FAFAFA] font-mono">{BANK_INFO.zelle.email}</span></p>
+                      <p className="text-[#8A8A8A]">Email: <span className="text-[#FAFAFA] font-mono">{bankInfo.zelle.email}</span></p>
                     </div>
                   )}
                   <p className="text-[#D4A853] text-xs mt-4">
@@ -419,6 +470,28 @@ export default function CheckoutPage() {
                   <span className="text-[#FAFAFA]">{PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label}</span>
                 </div>
               </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="text-[#8A8A8A] text-xs font-medium mb-1.5 block">Notas del Pedido (opcional)</label>
+                <textarea
+                  value={notas}
+                  onChange={(e) => setNotas(e.target.value)}
+                  placeholder="Instrucciones especiales, detalles adicionales..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-[#FAFAFA] placeholder-[#6A6A6A] focus:outline-none focus:border-[#D4A853]/30 transition-all resize-none"
+                />
+              </div>
+
+              {orderError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl mb-6"
+                >
+                  <p className="text-red-400 text-xs">{orderError}</p>
+                </motion.div>
+              )}
 
               <div className="flex gap-3">
                 <button

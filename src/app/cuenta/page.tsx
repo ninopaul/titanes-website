@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 
 const DEMO_ORDERS = [
   { id: 1001, fecha: '2026-03-04', estado: 'en_produccion', total: 125.00, items: 3 },
@@ -24,12 +25,34 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
 export default function CuentaPage() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const [orders, setOrders] = useState(DEMO_ORDERS)
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login?redirect=/cuenta')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    async function fetchOrders() {
+      setOrdersLoading(true)
+      try {
+        const response = await storeApi.getMisPedidos() as any
+        const data = response?.data !== undefined ? response.data : response
+        const items = Array.isArray(data) ? data : (data?.results || [])
+        if (items.length > 0 || data !== undefined) {
+          setOrders(items)
+        }
+      } catch {
+        // Keep demo data as fallback
+      } finally {
+        setOrdersLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [isAuthenticated])
 
   if (isLoading) {
     return (
@@ -39,8 +62,8 @@ export default function CuentaPage() {
     )
   }
 
-  const activeOrders = DEMO_ORDERS.filter(o => !['entregado', 'cancelado'].includes(o.estado)).length
-  const lastOrder = DEMO_ORDERS[0]
+  const activeOrders = orders.filter(o => !['entregado', 'cancelado'].includes(o.estado)).length
+  const lastOrder = orders[0]
 
   return (
     <main className="min-h-screen bg-[#0A0A0B]">
@@ -76,7 +99,7 @@ export default function CuentaPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           {[
-            { label: 'Total Pedidos', value: DEMO_ORDERS.length, icon: (
+            { label: 'Total Pedidos', value: orders.length, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -173,7 +196,7 @@ export default function CuentaPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            {DEMO_ORDERS.slice(0, 3).map((order, i) => {
+            {orders.slice(0, 3).map((order, i) => {
               const style = STATUS_STYLES[order.estado] || STATUS_STYLES.pendiente
               return (
                 <motion.div

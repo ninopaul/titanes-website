@@ -56,8 +56,9 @@ export default function TiendaPage() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const data = await storeApi.getCategorias() as { results?: Array<{ id: number; nombre: string; slug: string }> }
-        const items = Array.isArray(data) ? data : (data.results || [])
+        const response = await storeApi.getCategorias() as any
+        const data = response?.data !== undefined ? response.data : response
+        const items = Array.isArray(data) ? data : (data?.results || [])
         if (items.length > 0) {
           setCategories(items)
           setApiAvailable(true)
@@ -93,15 +94,16 @@ export default function TiendaPage() {
 
       setIsLoading(true)
       try {
-        const data = await storeApi.getProductos({
+        const response = await storeApi.getProductos({
           page,
           categoria: activeCategory,
           search,
           ordering,
-        }) as { results?: typeof DEMO_PRODUCTS; count?: number }
-        const items = Array.isArray(data) ? data : (data.results || [])
+        }) as any
+        const data = response?.data !== undefined ? response.data : response
+        const items = Array.isArray(data) ? data : (data?.results || [])
         setProducts(items)
-        const count = (data as { count?: number }).count || items.length
+        const count = data?.count || items.length
         setTotalPages(Math.ceil(count / 12))
       } catch {
         // Fallback to demo

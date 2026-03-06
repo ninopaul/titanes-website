@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 import OrderTracker from '@/components/store/OrderTracker'
 
 const DEMO_ORDER = {
@@ -34,6 +35,8 @@ export default function PedidoDetailPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
   const orderId = params?.id
+  const [order, setOrder] = useState(DEMO_ORDER)
+  const [orderLoading, setOrderLoading] = useState(true)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -41,15 +44,32 @@ export default function PedidoDetailPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isAuthenticated || !orderId) return
+    async function fetchOrder() {
+      setOrderLoading(true)
+      try {
+        const response = await storeApi.getMiPedido(Number(orderId)) as any
+        const data = response?.data !== undefined ? response.data : response
+        if (data && data.id) {
+          setOrder(data)
+        }
+      } catch {
+        // Keep demo data as fallback
+      } finally {
+        setOrderLoading(false)
+      }
+    }
+    fetchOrder()
+  }, [isAuthenticated, orderId])
+
+  if (isLoading || orderLoading) {
     return (
       <main className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#D4A853] border-t-transparent rounded-full animate-spin" />
       </main>
     )
   }
-
-  const order = DEMO_ORDER
 
   return (
     <main className="min-h-screen bg-[#0A0A0B]">

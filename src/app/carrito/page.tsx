@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useCart } from '@/components/store/CartProvider'
+import storeApi from '@/lib/store-api'
 
 export default function CarritoPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
@@ -13,23 +14,42 @@ export default function CarritoPage() {
   const [couponApplied, setCouponApplied] = useState(false)
 
   const subtotal = getTotal()
-  const shipping = 0 // Free for now
+  const shipping: number = 0 // Free for now
   const total = subtotal - discount + shipping
 
-  const handleApplyCoupon = () => {
+  const [couponLoading, setCouponLoading] = useState(false)
+
+  const handleApplyCoupon = async () => {
     setCouponError('')
     if (!couponCode.trim()) {
       setCouponError('Ingresa un codigo de cupon')
       return
     }
-    // For now, demo coupon
-    if (couponCode.toUpperCase() === 'TITANES10') {
-      setDiscount(subtotal * 0.10)
-      setCouponApplied(true)
-    } else {
-      setCouponError('Cupon invalido o expirado')
-      setDiscount(0)
-      setCouponApplied(false)
+    setCouponLoading(true)
+    try {
+      const response = await storeApi.validarCupon(couponCode) as any
+      const data = response?.data !== undefined ? response.data : response
+      if (data?.valido || data?.valid) {
+        const pct = data.porcentaje || data.descuento || 10
+        setDiscount(subtotal * (pct / 100))
+        setCouponApplied(true)
+      } else {
+        setCouponError(data?.mensaje || data?.message || 'Cupon invalido o expirado')
+        setDiscount(0)
+        setCouponApplied(false)
+      }
+    } catch {
+      // Fallback: check demo coupon
+      if (couponCode.toUpperCase() === 'TITANES10') {
+        setDiscount(subtotal * 0.10)
+        setCouponApplied(true)
+      } else {
+        setCouponError('Cupon invalido o expirado')
+        setDiscount(0)
+        setCouponApplied(false)
+      }
+    } finally {
+      setCouponLoading(false)
     }
   }
 
@@ -207,10 +227,12 @@ export default function CarritoPage() {
                     />
                     <button
                       onClick={handleApplyCoupon}
-                      disabled={couponApplied}
-                      className="px-4 py-2 bg-white/5 border border-white/5 rounded-lg text-sm text-[#8A8A8A] hover:bg-white/10 hover:text-[#FAFAFA] transition-colors disabled:opacity-50"
+                      disabled={couponApplied || couponLoading}
+                      className="px-4 py-2 bg-white/5 border border-white/5 rounded-lg text-sm text-[#8A8A8A] hover:bg-white/10 hover:text-[#FAFAFA] transition-colors disabled:opacity-50 min-w-[80px] flex items-center justify-center"
                     >
-                      {couponApplied ? 'Aplicado' : 'Aplicar'}
+                      {couponLoading ? (
+                        <div className="w-4 h-4 border-2 border-[#8A8A8A] border-t-transparent rounded-full animate-spin" />
+                      ) : couponApplied ? 'Aplicado' : 'Aplicar'}
                     </button>
                   </div>
                   {couponError && <p className="text-red-400 text-xs mt-1">{couponError}</p>}

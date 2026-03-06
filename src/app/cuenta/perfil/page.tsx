@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -31,17 +32,40 @@ export default function PerfilPage() {
 
   useEffect(() => {
     if (user) {
-      setForm({
+      setForm(f => ({
+        ...f,
         nombre: user.nombre || '',
         apellido: user.apellido || '',
         email: user.email || '',
         telefono: user.telefono || '',
-        direccion: '',
-        ciudad: '',
-        estado: '',
-      })
+      }))
     }
   }, [user])
+
+  // Fetch full profile from API (may include address fields)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    async function fetchProfile() {
+      try {
+        const response = await storeApi.getPerfil() as any
+        const data = response?.data !== undefined ? response.data : response
+        if (data) {
+          setForm({
+            nombre: data.nombre || '',
+            apellido: data.apellido || '',
+            email: data.email || '',
+            telefono: data.telefono || '',
+            direccion: data.direccion || '',
+            ciudad: data.ciudad || '',
+            estado: data.estado || '',
+          })
+        }
+      } catch {
+        // Use auth context user data as fallback
+      }
+    }
+    fetchProfile()
+  }, [isAuthenticated])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,8 +74,8 @@ export default function PerfilPage() {
     setSuccess(false)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const { email, ...updateData } = form
+      await storeApi.updatePerfil(updateData)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {

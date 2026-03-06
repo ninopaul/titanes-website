@@ -58,8 +58,9 @@ export default function ProductDetailPage() {
     async function fetchProduct() {
       setIsLoading(true)
       try {
-        const data = await storeApi.getProducto(slug) as Product
-        setProduct(data)
+        const response = await storeApi.getProducto(slug) as any
+        const data = response?.data !== undefined ? response.data : response
+        setProduct(data as Product)
       } catch {
         // Use demo data
         setProduct({ ...DEMO_PRODUCT, slug })

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import storeApi from '@/lib/store-api'
 import { COMPANY } from '@/lib/constants'
 
 const DEMO_POST = {
@@ -92,8 +93,35 @@ export default function BlogPostPage() {
   const params = useParams()
   const slug = params?.slug as string
   const [copied, setCopied] = useState(false)
+  const [post, setPost] = useState({ ...DEMO_POST, slug })
+  const [contentBlocks, setContentBlocks] = useState(DEMO_CONTENT_BLOCKS)
+  const [isLoading, setIsLoading] = useState(true)
+  const [htmlContent, setHtmlContent] = useState('')
 
-  const post = { ...DEMO_POST, slug }
+  useEffect(() => {
+    async function fetchPost() {
+      setIsLoading(true)
+      try {
+        const response = await storeApi.getBlogPost(slug) as any
+        const data = response?.data !== undefined ? response.data : response
+        if (data && data.titulo) {
+          setPost(data)
+          // If API returns contenido_html, use it; otherwise keep demo blocks
+          if (data.contenido_html) {
+            setHtmlContent(data.contenido_html)
+            setContentBlocks([])
+          }
+        }
+      } catch {
+        // Use demo data
+        setPost({ ...DEMO_POST, slug })
+        setContentBlocks(DEMO_CONTENT_BLOCKS)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    if (slug) fetchPost()
+  }, [slug])
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
   const whatsappShare = `https://wa.me/?text=${encodeURIComponent(`${post.titulo} - ${shareUrl}`)}`
@@ -103,6 +131,24 @@ export default function BlogPostPage() {
     navigator.clipboard.writeText(shareUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-[#0A0A0B] pt-24">
+        <div className="max-w-3xl mx-auto px-6 animate-pulse">
+          <div className="h-[30vh] bg-white/5 rounded-2xl mb-8" />
+          <div className="h-4 bg-white/5 rounded w-1/4 mb-4" />
+          <div className="h-8 bg-white/5 rounded w-3/4 mb-4" />
+          <div className="h-4 bg-white/5 rounded w-1/3 mb-10" />
+          <div className="space-y-3">
+            <div className="h-4 bg-white/5 rounded w-full" />
+            <div className="h-4 bg-white/5 rounded w-5/6" />
+            <div className="h-4 bg-white/5 rounded w-4/6" />
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -162,9 +208,16 @@ export default function BlogPostPage() {
 
           {/* Article Content - Safe structured rendering */}
           <div className="max-w-none">
-            {DEMO_CONTENT_BLOCKS.map((block, i) => (
-              <RenderBlock key={i} block={block} />
-            ))}
+            {htmlContent ? (
+              <div
+                className="prose prose-invert prose-sm max-w-none [&_h2]:text-[#FAFAFA] [&_h2]:font-bold [&_h2]:text-xl [&_h2]:mt-10 [&_h2]:mb-4 [&_p]:text-[#8A8A8A] [&_p]:leading-relaxed [&_p]:mb-4 [&_li]:text-[#8A8A8A] [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ul]:mb-6"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+              />
+            ) : (
+              contentBlocks.map((block, i) => (
+                <RenderBlock key={i} block={block} />
+              ))
+            )}
           </div>
 
           {/* Divider */}

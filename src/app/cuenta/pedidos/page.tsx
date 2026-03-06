@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 
 const DEMO_ORDERS = [
   { id: 1001, fecha: '2026-03-04', estado: 'en_produccion', total: 125.00, items_count: 3 },
@@ -26,12 +27,34 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
 export default function PedidosPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
+  const [orders, setOrders] = useState(DEMO_ORDERS)
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login?redirect=/cuenta/pedidos')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    async function fetchOrders() {
+      setOrdersLoading(true)
+      try {
+        const response = await storeApi.getMisPedidos() as any
+        const data = response?.data !== undefined ? response.data : response
+        const items = Array.isArray(data) ? data : (data?.results || [])
+        if (items.length > 0 || data !== undefined) {
+          setOrders(items)
+        }
+      } catch {
+        // Keep demo data as fallback
+      } finally {
+        setOrdersLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [isAuthenticated])
 
   if (isLoading) {
     return (
@@ -67,7 +90,22 @@ export default function PedidosPage() {
           <p className="text-[#8A8A8A] text-sm mt-1">Historial completo de tus pedidos</p>
         </motion.div>
 
-        {DEMO_ORDERS.length === 0 ? (
+        {ordersLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-[#111113] rounded-xl border border-white/5 p-5 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/5" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-white/5 rounded w-1/3" />
+                    <div className="h-3 bg-white/5 rounded w-1/4" />
+                  </div>
+                  <div className="h-4 bg-white/5 rounded w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-[#8A8A8A]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,7 +119,7 @@ export default function PedidosPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {DEMO_ORDERS.map((order, i) => {
+            {orders.map((order, i) => {
               const style = STATUS_STYLES[order.estado] || STATUS_STYLES.pendiente
               return (
                 <motion.div
