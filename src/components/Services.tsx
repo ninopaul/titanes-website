@@ -4,6 +4,78 @@ import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { SERVICES } from '@/lib/constants'
 
+// ═══ Floating decorative SVG shapes for this section ═══
+function SectionDecorations() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Large rotating gear outline - top right */}
+      <motion.svg
+        animate={{ rotate: 360 }}
+        transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
+        className="absolute -top-32 -right-32 w-[500px] h-[500px] opacity-[0.03]"
+        viewBox="0 0 200 200"
+      >
+        <circle cx="100" cy="100" r="60" fill="none" stroke="#D4A853" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="70" fill="none" stroke="#D4A853" strokeWidth="0.3" strokeDasharray="8 4" />
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+        {/* Gear teeth */}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i * 30 * Math.PI) / 180
+          const x1 = 100 + 78 * Math.cos(angle)
+          const y1 = 100 + 78 * Math.sin(angle)
+          const x2 = 100 + 90 * Math.cos(angle)
+          const y2 = 100 + 90 * Math.sin(angle)
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#D4A853" strokeWidth="0.5" />
+        })}
+      </motion.svg>
+
+      {/* Diagonal flowing lines - left */}
+      <motion.svg
+        animate={{ y: [-20, 20, -20] }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-1/3 -left-20 w-[300px] h-[600px] opacity-[0.04]"
+        viewBox="0 0 100 200"
+      >
+        <path d="M0,0 Q50,50 30,100 T60,200" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+        <path d="M10,0 Q60,50 40,100 T70,200" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+        <path d="M20,0 Q70,50 50,100 T80,200" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+      </motion.svg>
+
+      {/* Scattered dots constellation */}
+      <svg className="absolute top-20 right-[20%] w-[200px] h-[200px] opacity-[0.06]" viewBox="0 0 200 200">
+        {[
+          [40, 30], [80, 60], [120, 20], [160, 80], [60, 120],
+          [100, 90], [140, 140], [30, 160], [180, 30], [90, 170],
+        ].map(([cx, cy], i) => (
+          <motion.circle
+            key={i}
+            cx={cx} cy={cy} r="1.5"
+            fill="#D4A853"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 2 + i * 0.3, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+          />
+        ))}
+        {/* Connection lines between some dots */}
+        <line x1="40" y1="30" x2="80" y2="60" stroke="#D4A853" strokeWidth="0.2" opacity="0.3" />
+        <line x1="80" y1="60" x2="120" y2="20" stroke="#D4A853" strokeWidth="0.2" opacity="0.3" />
+        <line x1="100" y1="90" x2="140" y2="140" stroke="#D4A853" strokeWidth="0.2" opacity="0.3" />
+        <line x1="60" y1="120" x2="100" y2="90" stroke="#D4A853" strokeWidth="0.2" opacity="0.3" />
+      </svg>
+
+      {/* Bottom gradient blob */}
+      <motion.div
+        animate={{ x: [0, 30, 0], opacity: [0.03, 0.06, 0.03] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -bottom-40 left-1/4 w-[600px] h-[600px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(212,168,83,0.08) 0%, transparent 60%)',
+          filter: 'blur(80px)',
+        }}
+      />
+    </div>
+  )
+}
+
 // 3D Tilt Card
 function ServiceCard({ service, index }: { service: typeof SERVICES[0]; index: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -48,11 +120,19 @@ function ServiceCard({ service, index }: { service: typeof SERVICES[0]; index: n
         }`} />
 
         {/* Card body */}
-        <div className="relative h-full bg-[#141416] border border-white/5 rounded-2xl p-6 overflow-hidden transition-colors duration-500 hover:border-[#D4A853]/20">
+        <div className="relative h-full bg-[#141416]/80 backdrop-blur-sm border border-white/5 rounded-2xl p-6 overflow-hidden transition-colors duration-500 hover:border-[#D4A853]/20">
           {/* Background glow on hover */}
           <div className={`absolute top-0 right-0 w-40 h-40 bg-[#D4A853]/5 rounded-full blur-3xl transition-opacity duration-500 ${
             isHovered ? 'opacity-100' : 'opacity-0'
           }`} />
+
+          {/* Geometric corner accent */}
+          <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <svg viewBox="0 0 60 60" className="w-full h-full">
+              <path d="M60,0 L60,20 L40,20" fill="none" stroke="#D4A853" strokeWidth="0.5" opacity="0.3" />
+              <path d="M60,0 L60,10 L50,10" fill="none" stroke="#D4A853" strokeWidth="0.5" opacity="0.5" />
+            </svg>
+          </div>
 
           {/* Icon */}
           <div className="relative mb-4">
@@ -108,10 +188,14 @@ export default function Services() {
   return (
     <section id="servicios" ref={sectionRef} className="relative py-32 overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#0A0A0B]" />
+      <div className="absolute inset-0 bg-[#0A0A0B]/90" />
 
-      {/* Side decoration */}
+      {/* Decorative elements */}
+      <SectionDecorations />
+
+      {/* Side decoration lines */}
       <div className="absolute left-0 top-1/4 w-px h-64 bg-gradient-to-b from-transparent via-[#D4A853]/20 to-transparent" />
+      <div className="absolute right-0 bottom-1/4 w-px h-64 bg-gradient-to-b from-transparent via-[#D4A853]/10 to-transparent" />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}

@@ -44,8 +44,47 @@ export default function Stats() {
   return (
     <section ref={sectionRef} className="relative py-24 overflow-hidden">
       {/* Background with gradient */}
-      <div className="absolute inset-0 bg-[#141416]" />
+      <div className="absolute inset-0 bg-[#141416]/90" />
       <div className="absolute inset-0 grid-bg opacity-50" />
+
+      {/* Animated gradient streaks */}
+      <motion.div
+        animate={{ x: ['-100%', '200%'] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatDelay: 4 }}
+        className="absolute top-1/2 left-0 w-1/3 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.2), transparent)',
+        }}
+      />
+      <motion.div
+        animate={{ x: ['200%', '-100%'] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'linear', repeatDelay: 5 }}
+        className="absolute top-1/3 left-0 w-1/4 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.15), transparent)',
+        }}
+      />
+
+      {/* Floating hexagons in background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <motion.svg
+          animate={{ rotate: -360, y: [-10, 10, -10] }}
+          transition={{ rotate: { duration: 60, repeat: Infinity, ease: 'linear' }, y: { duration: 8, repeat: Infinity, ease: 'easeInOut' } }}
+          className="absolute -left-10 top-1/4 w-[120px] h-[120px] opacity-[0.04]"
+          viewBox="0 0 100 100"
+        >
+          <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#D4A853" strokeWidth="0.5" />
+        </motion.svg>
+        <motion.svg
+          animate={{ rotate: 360 }}
+          transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+          className="absolute -right-16 bottom-1/4 w-[160px] h-[160px] opacity-[0.03]"
+          viewBox="0 0 100 100"
+        >
+          <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#D4A853" strokeWidth="0.4" />
+          <polygon points="50,20 75,35 75,65 50,80 25,65 25,35" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+        </motion.svg>
+      </div>
 
       {/* Gold line at top */}
       <div className="absolute top-0 left-0 right-0 section-divider" />
@@ -65,8 +104,11 @@ export default function Stats() {
                 <div className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-16 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
               )}
 
+              {/* Subtle glow behind number */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#D4A853]/3 rounded-full blur-3xl" />
+
               <div
-                className="text-5xl md:text-6xl lg:text-7xl font-black text-gradient-gold mb-2"
+                className="relative text-5xl md:text-6xl lg:text-7xl font-black text-gradient-gold mb-2"
                 style={{ fontFamily: 'var(--font-clash-display)' }}
               >
                 <Counter value={stat.value} suffix={stat.suffix} />

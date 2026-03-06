@@ -26,7 +26,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-[#8A8A8A] text-sm leading-relaxed mb-6">
-              Soluciones integrales en impresión, corte y producción gráfica industrial. Más de 15 años haciendo realidad los proyectos de nuestros clientes.
+              Soluciones integrales en impresión, corte y producción gráfica profesional. Más de 15 años haciendo realidad los proyectos de nuestros clientes.
             </p>
             {/* Social links */}
             <div className="flex items-center gap-3">

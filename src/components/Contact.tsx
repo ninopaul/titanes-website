@@ -24,8 +24,60 @@ export default function Contact() {
 
   return (
     <section id="contacto" ref={sectionRef} className="relative py-32 overflow-hidden">
-      <div className="absolute inset-0 bg-[#0A0A0B]" />
+      <div className="absolute inset-0 bg-[#0A0A0B]/90" />
       <div className="absolute inset-0 grid-bg opacity-30" />
+
+      {/* Floating decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Concentric circles - top right */}
+        <motion.svg
+          animate={{ rotate: 360 }}
+          transition={{ duration: 90, repeat: Infinity, ease: 'linear' }}
+          className="absolute -top-20 -right-20 w-[400px] h-[400px] opacity-[0.03]"
+          viewBox="0 0 200 200"
+        >
+          <circle cx="100" cy="100" r="90" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+          <circle cx="100" cy="100" r="50" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+          <circle cx="100" cy="100" r="30" fill="none" stroke="#D4A853" strokeWidth="0.3" />
+        </motion.svg>
+
+        {/* Cross - bottom left */}
+        <motion.svg
+          animate={{ rotate: [0, 90, 180, 270, 360] }}
+          transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+          className="absolute -bottom-10 -left-10 w-[150px] h-[150px] opacity-[0.04]"
+          viewBox="0 0 100 100"
+        >
+          <path d="M40,0 L60,0 L60,40 L100,40 L100,60 L60,60 L60,100 L40,100 L40,60 L0,60 L0,40 L40,40 Z" fill="none" stroke="#D4A853" strokeWidth="0.4" />
+        </motion.svg>
+
+        {/* Gradient glow - center */}
+        <motion.div
+          animate={{ opacity: [0.03, 0.06, 0.03], scale: [0.9, 1.1, 0.9] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 60%)',
+            filter: 'blur(80px)',
+          }}
+        />
+
+        {/* Pulsing dots */}
+        {[
+          { top: '10%', right: '20%', delay: 0 },
+          { top: '80%', left: '15%', delay: 1 },
+          { top: '30%', left: '5%', delay: 2 },
+        ].map((p, i) => (
+          <motion.div
+            key={i}
+            animate={{ opacity: [0.1, 0.4, 0.1], scale: [1, 1.5, 1] }}
+            transition={{ duration: 3, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+            className="absolute w-1.5 h-1.5 rounded-full bg-[#D4A853]"
+            style={p}
+          />
+        ))}
+      </div>
 
       {/* Top divider */}
       <div className="absolute top-0 left-0 right-0 section-divider" />
@@ -76,7 +128,7 @@ export default function Contact() {
                     required
                     value={formState.nombre}
                     onChange={(e) => setFormState({ ...formState, nombre: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#141416] border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
+                    className="w-full px-4 py-3 bg-[#141416]/80 backdrop-blur-sm border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
                     placeholder="Tu nombre"
                   />
                 </div>
@@ -89,7 +141,7 @@ export default function Contact() {
                     required
                     value={formState.email}
                     onChange={(e) => setFormState({ ...formState, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#141416] border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
+                    className="w-full px-4 py-3 bg-[#141416]/80 backdrop-blur-sm border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -104,7 +156,7 @@ export default function Contact() {
                     type="tel"
                     value={formState.telefono}
                     onChange={(e) => setFormState({ ...formState, telefono: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#141416] border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
+                    className="w-full px-4 py-3 bg-[#141416]/80 backdrop-blur-sm border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300"
                     placeholder="+58 412-1234567"
                   />
                 </div>
@@ -115,7 +167,7 @@ export default function Contact() {
                   <select
                     value={formState.servicio}
                     onChange={(e) => setFormState({ ...formState, servicio: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#141416] border border-white/10 rounded-xl text-[#FAFAFA] focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300 appearance-none"
+                    className="w-full px-4 py-3 bg-[#141416]/80 backdrop-blur-sm border border-white/10 rounded-xl text-[#FAFAFA] focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300 appearance-none"
                   >
                     <option value="" className="bg-[#141416]">Seleccionar servicio</option>
                     <option value="Impresión Gran Formato" className="bg-[#141416]">Impresión Gran Formato</option>
@@ -140,19 +192,22 @@ export default function Contact() {
                   rows={4}
                   value={formState.mensaje}
                   onChange={(e) => setFormState({ ...formState, mensaje: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#141416] border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300 resize-none"
+                  className="w-full px-4 py-3 bg-[#141416]/80 backdrop-blur-sm border border-white/10 rounded-xl text-[#FAFAFA] placeholder:text-[#8A8A8A]/50 focus:border-[#D4A853]/50 focus:outline-none focus:ring-1 focus:ring-[#D4A853]/20 transition-all duration-300 resize-none"
                   placeholder="Describe tu proyecto, medidas, cantidad, material..."
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full sm:w-auto px-8 py-4 bg-[#D4A853] text-[#0A0A0B] font-bold text-base rounded-full hover:bg-[#E8C776] transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,168,83,0.3)] flex items-center justify-center gap-2 group"
+                className="group relative w-full sm:w-auto px-8 py-4 bg-[#D4A853] text-[#0A0A0B] font-bold text-base rounded-full hover:bg-[#E8C776] transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,168,83,0.3)] flex items-center justify-center gap-2 overflow-hidden"
               >
-                Enviar por WhatsApp
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="relative flex items-center gap-2">
+                  Enviar por WhatsApp
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </span>
               </button>
             </form>
           </motion.div>
@@ -178,7 +233,7 @@ export default function Contact() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={isInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}
-                  className="flex items-start gap-4 p-4 bg-[#141416] rounded-xl border border-white/5 hover:border-[#D4A853]/20 transition-all duration-300 group"
+                  className="flex items-start gap-4 p-4 bg-[#141416]/80 backdrop-blur-sm rounded-xl border border-white/5 hover:border-[#D4A853]/20 transition-all duration-300 group"
                 >
                   <span className="text-2xl flex-shrink-0 mt-0.5">{info.icon}</span>
                   <div>
@@ -194,11 +249,18 @@ export default function Contact() {
             </div>
 
             {/* Map placeholder */}
-            <div className="h-48 bg-[#141416] rounded-xl border border-white/5 overflow-hidden relative">
+            <div className="h-48 bg-[#141416]/80 backdrop-blur-sm rounded-xl border border-white/5 overflow-hidden relative group hover:border-[#D4A853]/20 transition-all duration-500">
               <div className="absolute inset-0 grid-bg" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[#8A8A8A] text-sm">📍 Mapa Interactivo</span>
+                <div className="text-center">
+                  <span className="text-4xl mb-2 block">📍</span>
+                  <span className="text-[#8A8A8A] text-sm">Mapa Interactivo</span>
+                </div>
               </div>
+              {/* Gold border glow on hover */}
+              <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }}
+              />
             </div>
           </motion.div>
         </div>
