@@ -5,7 +5,7 @@
 export const COMPANY = {
   name: 'Titanes Gráficos',
   tagline: 'CREAMOS LO QUE IMAGINAS',
-  description: 'Soluciones integrales en impresión, corte y producción gráfica industrial',
+  description: 'Soluciones integrales en impresión, corte y producción gráfica profesional',
   phone: '+58 412-1234567',
   whatsapp: '584121234567',
   email: 'info@titanesgraficos.com.ve',
@@ -115,67 +115,159 @@ export const SERVICES = [
 ]
 
 export const MACHINES = [
+  // ═══ IMPRESIÓN GRAN FORMATO ═══
   {
-    name: 'Mimaki Gran Formato',
-    type: 'Plotter de Impresión',
-    spec: 'Ancho máx: 3.2m | Solvente/Ecosolvente',
-    description: 'Impresión de alta velocidad para banners, lonas y vinilos de gran formato.',
+    name: 'Mimaki JV300 Plus',
+    type: 'Impresión Gran Formato',
+    spec: 'Ancho: 3.2m | Solvente/Ecosolvente | 1440dpi',
+    description: 'Plotter principal de alta velocidad para banners, lonas y vinilos de gran formato.',
   },
   {
-    name: 'Mimaki UV',
+    name: 'Mimaki CJV150',
+    type: 'Impresión y Corte',
+    spec: 'Ancho: 1.6m | Print & Cut Integrado',
+    description: 'Impresión y corte integrado para stickers, etiquetas y vinil decorativo.',
+  },
+  {
+    name: 'Mimaki JV150',
+    type: 'Impresión Gran Formato',
+    spec: 'Ancho: 1.6m | Ecosolvente | Alta Velocidad',
+    description: 'Línea secundaria de producción para tirajes continuos y trabajos urgentes.',
+  },
+  // ═══ IMPRESIÓN UV ═══
+  {
+    name: 'Mimaki UJF-7151 Plus II',
     type: 'Impresora UV Cama Plana',
-    spec: 'Resolución: 1440dpi | Rígidos hasta 10cm',
+    spec: '1440dpi | Rígidos hasta 15cm | CMYK+W',
     description: 'Impresión directa sobre materiales rígidos con curado UV instantáneo.',
   },
   {
+    name: 'Mimaki UJV100-160',
+    type: 'Impresora UV Roll-to-Roll',
+    spec: 'Ancho: 1.6m | UV LED | Tinta Flexible',
+    description: 'Impresión UV sobre materiales flexibles: lonas, backlit, vinilos especiales.',
+  },
+  // ═══ IMPRESIÓN DIGITAL ═══
+  {
     name: 'Wiprime',
-    type: 'Impresora Digital',
-    spec: 'Digital de Alta Velocidad | CMYK + Barniz',
-    description: 'Producción digital de alta calidad para tirajes cortos y medios.',
+    type: 'Impresora Digital Offset',
+    spec: 'Alta Velocidad | CMYK + Barniz Selectivo',
+    description: 'Producción digital de alta calidad para tarjetas, folletos y catálogos.',
   },
   {
-    name: 'Calandra Pengda',
-    type: 'Sublimación Neumática',
-    spec: 'Tambor de Aceite | 1.7m Ancho | Rollo a Rollo',
-    description: 'Sublimación industrial para textiles deportivos, telas y lonas.',
+    name: 'Impresora Tóner',
+    type: 'Impresión Digital',
+    spec: 'Formato: A3+ | Tóner Láser | Doble Cara',
+    description: 'Producción de tirajes cortos con acabado profesional inmediato.',
   },
+  // ═══ SUBLIMACIÓN ═══
+  {
+    name: 'Calandra Pengda Neumática',
+    type: 'Sublimación Industrial',
+    spec: 'Tambor de Aceite | 1.7m | Rollo a Rollo',
+    description: 'Sublimación industrial para textiles deportivos, telas técnicas y lonas.',
+  },
+  {
+    name: 'Prensa Térmica Plana',
+    type: 'Sublimación',
+    spec: '40×60cm | Control Digital | 0-250°C',
+    description: 'Sublimación pieza a pieza para artículos promocionales, tazas y premios.',
+  },
+  {
+    name: 'Plotter Sublimación',
+    type: 'Impresión para Sublimación',
+    spec: 'Ancho: 1.6m | Tinta Sublimación | Alta Densidad',
+    description: 'Impresión de transfers de sublimación para textiles y superficies rígidas.',
+  },
+  // ═══ CORTE CNC ═══
   {
     name: 'CNC Cuchilla Oscilatoria',
     type: 'Corte de Precisión',
     spec: 'Área: 1.3×2.5m | Textiles y Flexibles',
-    description: 'Corte CNC de alta precisión para materiales flexibles y textiles.',
+    description: 'Corte CNC de alta precisión para materiales flexibles, textiles y foam.',
+  },
+  {
+    name: 'Router CNC 3 Ejes',
+    type: 'Corte y Fresado',
+    spec: 'Área: 2.4×1.2m | MDF, Acrílico, PVC',
+    description: 'Router industrial para corte y fresado de materiales rígidos y corpóreos.',
   },
   {
     name: 'CNC Hermle',
     type: 'Mecanizado Industrial',
-    spec: '5 Ejes | Precisión: ±0.01mm',
-    description: 'Centro de mecanizado de precisión industrial para materiales rígidos.',
+    spec: '5 Ejes | Precisión: ±0.01mm | Metales',
+    description: 'Centro de mecanizado de precisión industrial para piezas metálicas y moldes.',
+  },
+  // ═══ LÁSER ═══
+  {
+    name: 'Láser CO2 150W',
+    type: 'Corte y Grabado Láser',
+    spec: '150W | Área: 1.3×0.9m | No Metálicos',
+    description: 'Corte y grabado láser gran formato para acrílico, MDF y telas.',
   },
   {
-    name: 'Láser CO2',
-    type: 'Corte y Grabado',
-    spec: '150W | Área: 1.3×0.9m | No Metálicos',
-    description: 'Corte y grabado láser para acrílico, MDF, telas y papel.',
+    name: 'Láser CO2 80W',
+    type: 'Grabado Láser',
+    spec: '80W | Área: 0.6×0.4m | Detalle Fino',
+    description: 'Grabado de precisión para piezas pequeñas, sellos, trofeos y señalética.',
   },
   {
     name: 'Fibra Láser',
     type: 'Grabado en Metales',
-    spec: '50W | Marcado permanente | Metales',
-    description: 'Grabado de alta precisión en acero, aluminio, trofeos y placas.',
+    spec: '50W | Marcado Permanente | Acero/Aluminio',
+    description: 'Grabado de alta precisión en metales: placas industriales, trofeos, joyería.',
+  },
+  // ═══ CORTE Y ACABADO ═══
+  {
+    name: 'Plotter de Corte Mimaki',
+    type: 'Corte de Vinil',
+    spec: 'Ancho: 1.4m | Corte de Contorno | Sensor Óptico',
+    description: 'Corte de vinil adhesivo, transfer textil y contornos de impresión.',
+  },
+  {
+    name: 'Laminadora Industrial',
+    type: 'Laminado',
+    spec: 'Ancho: 1.6m | Frío y Caliente | Rollo a Rollo',
+    description: 'Laminado protector para impresiones: mate, brillante, texturizado.',
+  },
+  {
+    name: 'Guillotina Industrial',
+    type: 'Corte Recto',
+    spec: 'Ancho: 1.2m | Programable | Corte Múltiple',
+    description: 'Corte recto de precisión para papel, cartón, vinil y materiales delgados.',
+  },
+  {
+    name: 'Dobladora de Acrílico',
+    type: 'Termoformado',
+    spec: 'Longitud: 1.5m | Resistencia Térmica',
+    description: 'Doblado térmico de acrílico para displays, exhibidores y corpóreos.',
+  },
+  {
+    name: 'Soldadora de Lona',
+    type: 'Confección',
+    spec: 'Alta Frecuencia | Sellado Hermético',
+    description: 'Soldadura de lonas para toldos, estructuras publicitarias y carpas.',
+  },
+  {
+    name: 'Compresor Industrial',
+    type: 'Neumática',
+    spec: '10HP | Secador Integrado | 500L',
+    description: 'Suministro de aire comprimido para CNC, calandra y equipos neumáticos.',
   },
 ]
 
 export const STATS = [
   { value: 5000, suffix: '+', label: 'Proyectos Completados' },
   { value: 12, suffix: '', label: 'Servicios Especializados' },
-  { value: 8, suffix: '', label: 'Máquinas Industriales' },
+  { value: 22, suffix: '+', label: 'Máquinas Industriales' },
   { value: 15, suffix: '+', label: 'Años de Experiencia' },
 ]
 
 export const NAV_LINKS = [
-  { label: 'Inicio', href: '#hero' },
-  { label: 'Servicios', href: '#servicios' },
-  { label: 'Portafolio', href: '#portafolio' },
-  { label: 'Maquinaria', href: '#maquinaria' },
-  { label: 'Contacto', href: '#contacto' },
+  { label: 'Inicio', href: '/' },
+  { label: 'Servicios', href: '/#servicios' },
+  { label: 'Tienda', href: '/tienda' },
+  { label: 'Portafolio', href: '/#portafolio' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Contacto', href: '/#contacto' },
 ]
