@@ -294,20 +294,56 @@ export default function Contact() {
               ))}
             </div>
 
-            {/* Map placeholder */}
-            <div className="h-48 bg-[#141416]/80 backdrop-blur-sm rounded-xl border border-white/5 overflow-hidden relative group hover:border-[#D4A853]/20 transition-all duration-500">
-              <div className="absolute inset-0 grid-bg" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-4xl mb-2 block">📍</span>
-                  <span className="text-[#8A8A8A] text-sm">Mapa Interactivo</span>
+            {/* Google Maps */}
+            {(() => {
+              const mapsUrl = company.google_maps_url
+              if (!mapsUrl) {
+                return (
+                  <div className="h-48 bg-[#141416]/80 backdrop-blur-sm rounded-xl border border-white/5 overflow-hidden relative group hover:border-[#D4A853]/20 transition-all duration-500">
+                    <div className="absolute inset-0 grid-bg" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="text-4xl mb-2 block">📍</span>
+                        <span className="text-[#8A8A8A] text-sm">Mapa Interactivo</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              // Extract lat/lng from Google Maps URL
+              let embedSrc = ''
+              const coordMatch = mapsUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/) ||
+                                 mapsUrl.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/)
+              if (coordMatch) {
+                const lat = coordMatch[1]
+                const lng = coordMatch[2]
+                embedSrc = `https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`
+              } else {
+                // Fallback: use the address
+                const addr = encodeURIComponent(company.direccion || 'Titanes Graficos')
+                embedSrc = `https://maps.google.com/maps?q=${addr}&z=17&output=embed`
+              }
+
+              return (
+                <div className="h-56 rounded-xl border border-white/5 overflow-hidden relative group hover:border-[#D4A853]/20 transition-all duration-500">
+                  <iframe
+                    src={embedSrc}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(0.95) contrast(0.9)' }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Ubicación en Google Maps"
+                  />
+                  {/* Gold border glow on hover */}
+                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.08)' }}
+                  />
                 </div>
-              </div>
-              {/* Gold border glow on hover */}
-              <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }}
-              />
-            </div>
+              )
+            })()}
           </motion.div>
         </div>
       </div>

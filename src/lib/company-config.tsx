@@ -21,6 +21,7 @@ export interface CompanyConfig {
   facebook: string
   tiktok: string
   rif: string
+  google_maps_url: string
   logo_url: string | null
   chatbot_habilitado: boolean
 }
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   facebook: '',
   tiktok: '',
   rif: '',
+  google_maps_url: '',
   logo_url: null,
   chatbot_habilitado: true,
 }
@@ -82,6 +84,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
             facebook: d.facebook || DEFAULT_CONFIG.facebook,
             tiktok: d.tiktok || DEFAULT_CONFIG.tiktok,
             rif: d.rif || DEFAULT_CONFIG.rif,
+            google_maps_url: d.google_maps_url || DEFAULT_CONFIG.google_maps_url,
             logo_url: d.logo_url || DEFAULT_CONFIG.logo_url,
             chatbot_habilitado: d.chatbot_habilitado ?? true,
           })

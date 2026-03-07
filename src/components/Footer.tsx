@@ -22,12 +22,12 @@ export default function Footer() {
                   alt={company.nombre}
                   width={40}
                   height={40}
-                  className="w-10 h-10 rounded-lg object-contain"
+                  className="w-10 h-10 rounded-lg object-contain animate-fade-in"
                   unoptimized
                 />
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-[#D4A853] to-[#B8923A] rounded-lg flex items-center justify-center">
-                  <span className="text-[#0A0A0B] font-black text-lg" style={{ fontFamily: 'var(--font-clash-display)' }}>T</span>
+                <div className="w-10 h-10 rounded-lg bg-[#1A1A1C] overflow-hidden">
+                  <div className="w-full h-full animate-shimmer bg-gradient-to-r from-[#1A1A1C] via-[#D4A853]/10 to-[#1A1A1C] bg-[length:200%_100%]" />
                 </div>
               )}
               <div>
