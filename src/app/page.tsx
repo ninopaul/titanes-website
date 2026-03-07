@@ -13,7 +13,7 @@ import Machinery from '@/components/Machinery'
 import GoogleReviews from '@/components/GoogleReviews'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import ChatWidget from '@/components/ChatWidget'
 
 export default function Home() {
   return (
@@ -32,7 +32,7 @@ export default function Home() {
         <Contact />
       </main>
       <Footer />
-      <WhatsAppButton />
+      <ChatWidget />
     </SmoothScroll>
   )
 }
