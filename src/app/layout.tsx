@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { displayFont, bodyFont, monoFont } from '@/lib/fonts'
 import { CartProvider } from '@/components/store/CartProvider'
 import { AuthProvider } from '@/lib/auth-context'
+import { CompanyConfigProvider } from '@/lib/company-config'
 import JsonLd from '@/components/JsonLd'
 import './globals.css'
 
@@ -58,11 +59,13 @@ export default function RootLayout({
         className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased noise-overlay`}
       >
         <JsonLd />
-        <AuthProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </AuthProvider>
+        <CompanyConfigProvider>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </AuthProvider>
+        </CompanyConfigProvider>
       </body>
     </html>
   )

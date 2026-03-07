@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { NAV_LINKS, COMPANY } from '@/lib/constants'
+import { useCompanyConfig } from '@/lib/company-config'
 import { useCart } from '@/components/store/CartProvider'
 import { useAuth } from '@/lib/auth-context'
 import CartDrawer from '@/components/store/CartDrawer'
@@ -14,6 +16,7 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
+  const company = useCompanyConfig()
   const { getItemCount, openCart } = useCart()
   const { user, isAuthenticated, logout } = useAuth()
   const itemCount = getItemCount()
@@ -54,9 +57,20 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#D4A853] to-[#B8923A] rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-[#0A0A0B] font-black text-lg" style={{ fontFamily: 'var(--font-clash-display)' }}>T</span>
-                </div>
+                {company.logo_url ? (
+                  <Image
+                    src={company.logo_url}
+                    alt={company.nombre}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-lg object-contain transform group-hover:scale-110 transition-transform duration-300"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#D4A853] to-[#B8923A] rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-[#0A0A0B] font-black text-lg" style={{ fontFamily: 'var(--font-clash-display)' }}>T</span>
+                  </div>
+                )}
                 <div className="absolute -inset-1 bg-[#D4A853]/20 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <div className="hidden sm:block">

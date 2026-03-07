@@ -3,10 +3,12 @@
 import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { COMPANY } from '@/lib/constants'
+import { useCompanyConfig } from '@/lib/company-config'
 
 export default function Contact() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' })
+  const company = useCompanyConfig()
   const [formState, setFormState] = useState({
     nombre: '',
     email: '',
@@ -15,11 +17,36 @@ export default function Contact() {
     mensaje: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Build WhatsApp message
-    const msg = `Hola! Soy ${formState.nombre}.\n\nServicio: ${formState.servicio}\n\n${formState.mensaje}\n\nContacto: ${formState.email} | ${formState.telefono}`
-    window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank')
+    setSubmitStatus('sending')
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:3003'
+      const res = await fetch(`${API_URL}/api/v1/chat/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Solicitud de contacto:\nNombre: ${formState.nombre}\nEmail: ${formState.email}\nTeléfono: ${formState.telefono}\nServicio: ${formState.servicio}\nMensaje: ${formState.mensaje}`,
+          session_id: 'contact_form_' + Date.now(),
+        }),
+      })
+      if (res.ok) {
+        setSubmitStatus('sent')
+        setFormState({ nombre: '', email: '', telefono: '', servicio: '', mensaje: '' })
+        setTimeout(() => setSubmitStatus('idle'), 4000)
+      } else {
+        throw new Error('Error')
+      }
+    } catch {
+      setSubmitStatus('error')
+      // Fallback: open WhatsApp with the message
+      const msg = `Hola! Soy ${formState.nombre}.\n\nServicio: ${formState.servicio}\n\n${formState.mensaje}\n\nContacto: ${formState.email} | ${formState.telefono}`
+      const whatsappNum = company.whatsapp.replace(/[^0-9]/g, '')
+      window.open(`https://wa.me/58${whatsappNum}?text=${encodeURIComponent(msg)}`, '_blank')
+      setTimeout(() => setSubmitStatus('idle'), 3000)
+    }
   }
 
   return (
@@ -199,14 +226,26 @@ export default function Contact() {
 
               <button
                 type="submit"
-                className="group relative w-full sm:w-auto px-8 py-4 bg-[#D4A853] text-[#0A0A0B] font-bold text-base rounded-full hover:bg-[#E8C776] transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,168,83,0.3)] flex items-center justify-center gap-2 overflow-hidden"
+                disabled={submitStatus === 'sending'}
+                className={`group relative w-full sm:w-auto px-8 py-4 font-bold text-base rounded-full transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden ${
+                  submitStatus === 'sent'
+                    ? 'bg-green-500 text-white shadow-[0_0_30px_rgba(34,197,94,0.3)]'
+                    : submitStatus === 'error'
+                    ? 'bg-red-500/80 text-white'
+                    : 'bg-[#D4A853] text-[#0A0A0B] hover:bg-[#E8C776] hover:shadow-[0_0_30px_rgba(212,168,83,0.3)]'
+                }`}
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <span className="relative flex items-center gap-2">
-                  Enviar por WhatsApp
-                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                  {submitStatus === 'sending' ? 'Enviando...' :
+                   submitStatus === 'sent' ? '✓ Solicitud Enviada' :
+                   submitStatus === 'error' ? 'Redirigiendo a Telegram...' :
+                   'Enviar Solicitud'}
+                  {submitStatus === 'idle' && (
+                    <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  )}
                 </span>
               </button>
             </form>
@@ -222,12 +261,13 @@ export default function Contact() {
             {/* Info cards */}
             <div className="space-y-4">
               {[
-                { icon: '📍', label: 'Ubicación', value: COMPANY.address },
-                { icon: '📞', label: 'Teléfono', value: COMPANY.phone },
-                { icon: '📧', label: 'Email', value: COMPANY.email },
-                { icon: '🕐', label: 'Horario', value: COMPANY.hours },
-                { icon: '📸', label: 'Instagram', value: COMPANY.instagram },
-              ].map((info, i) => (
+                { icon: '📍', label: 'Ubicación', value: company.direccion },
+                { icon: '📞', label: 'Teléfono', value: company.telefono, href: `tel:${company.telefono}` },
+                { icon: '📧', label: 'Email', value: company.email, href: `mailto:${company.email}` },
+                { icon: '🕐', label: 'Horario', value: company.horario },
+                { icon: '📸', label: 'Instagram', value: company.instagram, href: `https://instagram.com/${company.instagram.replace('@', '')}` },
+                ...(company.tiktok ? [{ icon: '🎵', label: 'TikTok', value: company.tiktok, href: `https://tiktok.com/${company.tiktok.replace('@', '')}` }] : []),
+              ].filter(info => info.value).map((info, i) => (
                 <motion.div
                   key={info.label}
                   initial={{ opacity: 0, y: 20 }}
@@ -240,9 +280,15 @@ export default function Contact() {
                     <div className="text-[#8A8A8A] text-xs uppercase tracking-wider font-medium mb-1">
                       {info.label}
                     </div>
-                    <div className="text-[#FAFAFA] text-sm group-hover:text-[#D4A853] transition-colors duration-300">
-                      {info.value}
-                    </div>
+                    {'href' in info && info.href ? (
+                      <a href={info.href} target={info.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className="text-[#FAFAFA] text-sm group-hover:text-[#D4A853] transition-colors duration-300">
+                        {info.value}
+                      </a>
+                    ) : (
+                      <div className="text-[#FAFAFA] text-sm group-hover:text-[#D4A853] transition-colors duration-300">
+                        {info.value}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}

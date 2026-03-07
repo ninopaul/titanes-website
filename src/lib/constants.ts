@@ -3,14 +3,17 @@
 // ═══════════════════════════════════════════════════════════
 
 export const COMPANY = {
-  name: 'Titanes Gráficos',
-  tagline: 'CREAMOS LO QUE IMAGINAS',
+  name: 'TITANESGRAFICOS,C.A',
+  tagline: 'Impresiones que se sienten.',
   description: 'Soluciones integrales en impresión, corte y producción gráfica profesional',
-  phone: '+58 412-1234567',
-  whatsapp: '584121234567',
-  email: 'info@titanesgraficos.com.ve',
-  address: 'Zona Industrial, Valencia, Venezuela',
-  instagram: '@titanesgraficos',
+  phone: '04121862992',
+  whatsapp: '04121862992',
+  telegram: 'titanes_graficos_bot',
+  email: 'titanesgraficos@gmail.com',
+  address: 'AV. PASEO CARONI C C NARAYA PB LOCAL B-36 SECTOR ALTA VISTA CIUDAD GUAYANA',
+  instagram: '@TITANESGRAFICOS',
+  tiktok: '@TITANESGRAFICOS',
+  rif: 'J-50168690-4',
   website: 'titanesgraficos.com.ve',
   hours: 'Lunes a Viernes: 8:00 AM - 6:00 PM | Sábados: 8:00 AM - 12:00 PM',
 }
