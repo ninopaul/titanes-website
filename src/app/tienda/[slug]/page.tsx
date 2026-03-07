@@ -9,6 +9,12 @@ import { useCart } from '@/components/store/CartProvider'
 import ProductCard from '@/components/store/ProductCard'
 import { COMPANY } from '@/lib/constants'
 
+interface ProductOption {
+  nombre: string
+  valores: string[]
+  afecta_precio?: boolean
+}
+
 interface Product {
   id: number
   slug: string
@@ -21,6 +27,8 @@ interface Product {
   cotizable?: boolean
   requiere_archivo?: boolean
   precio_bs?: number | null
+  opciones?: ProductOption[]
+  unidad_medida?: string
 }
 
 const DEMO_PRODUCT: Product = {
@@ -53,6 +61,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
 
   useEffect(() => {
     async function fetchProduct() {
@@ -61,37 +70,48 @@ export default function ProductDetailPage() {
         const response = await storeApi.getProducto(slug) as any
         const data = response?.data !== undefined ? response.data : response
         // Map API fields to Product interface
+        const precioRaw = data.precio_usd ? parseFloat(data.precio_usd) : data.precio ?? null
         setProduct({
           id: data.id,
           slug: data.slug,
           nombre: data.nombre,
           descripcion: data.descripcion || '',
-          precio: data.precio_usd ? parseFloat(data.precio_usd) : data.precio ?? null,
+          precio: precioRaw && precioRaw > 0 ? precioRaw : null,
           imagen: data.imagen_principal_url || data.imagen || null,
-          imagenes: data.imagenes || [],
+          imagenes: data.galeria || data.imagenes || [],
           categoria_nombre: data.categoria_nombre,
           cotizable: data.cotizable ?? false,
           requiere_archivo: data.requiere_archivo ?? false,
           precio_bs: data.precio_bs ? parseFloat(data.precio_bs) : null,
+          opciones: data.opciones || [],
+          unidad_medida: data.unidad_medida || '',
         })
       } catch {
         // Use demo data
         setProduct({ ...DEMO_PRODUCT, slug })
       } finally {
         setIsLoading(false)
+        setSelectedOptions({})
       }
     }
     if (slug) fetchProduct()
   }, [slug])
 
+  // Check if all required options are selected
+  const allOptionsSelected = !product?.opciones?.length ||
+    product.opciones.every(opt => selectedOptions[opt.nombre])
+
   const handleAddToCart = () => {
     if (!product || product.cotizable || !product.precio) return
+    if (!allOptionsSelected) return
+    const hasOptions = product.opciones && product.opciones.length > 0
     addItem({
       productId: product.id,
       slug: product.slug,
       name: product.nombre,
       price: product.precio,
       image: product.imagen || '',
+      ...(hasOptions ? { options: { ...selectedOptions } } : {}),
     }, quantity)
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
@@ -239,6 +259,37 @@ export default function ProductDetailPage() {
               {product.descripcion}
             </p>
 
+            {/* Product Options */}
+            {product.opciones && product.opciones.length > 0 && (
+              <div className="space-y-4 mb-6">
+                {product.opciones.map((opt) => (
+                  <div key={opt.nombre}>
+                    <label className="block text-[#8A8A8A] text-sm mb-2">
+                      {opt.nombre}
+                      {!selectedOptions[opt.nombre] && (
+                        <span className="text-[#D4A853] text-xs ml-2">* Selecciona una opción</span>
+                      )}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {opt.valores.map((valor) => (
+                        <button
+                          key={valor}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.nombre]: valor }))}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                            selectedOptions[opt.nombre] === valor
+                              ? 'bg-[#D4A853]/20 border-[#D4A853] text-[#D4A853] shadow-[0_0_10px_rgba(212,168,83,0.15)]'
+                              : 'bg-white/5 border-white/10 text-[#8A8A8A] hover:border-white/20 hover:text-[#FAFAFA]'
+                          }`}
+                        >
+                          {valor}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Price */}
             {product.cotizable || !product.precio ? (
               <div className="p-4 bg-[#D4A853]/5 border border-[#D4A853]/20 rounded-xl mb-6">
@@ -282,17 +333,27 @@ export default function ProductDetailPage() {
                 </div>
 
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={allOptionsSelected ? { scale: 1.02 } : {}}
+                  whileTap={allOptionsSelected ? { scale: 0.98 } : {}}
                   onClick={handleAddToCart}
+                  disabled={!allOptionsSelected}
                   className={`w-full py-4 font-bold text-sm rounded-full transition-all duration-300 flex items-center justify-center gap-2 ${
-                    addedToCart
-                      ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]'
-                      : 'bg-[#D4A853] text-[#0A0A0B] hover:bg-[#E8C776] shadow-[0_0_20px_rgba(212,168,83,0.3)]'
+                    !allOptionsSelected
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : addedToCart
+                        ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                        : 'bg-[#D4A853] text-[#0A0A0B] hover:bg-[#E8C776] shadow-[0_0_20px_rgba(212,168,83,0.3)]'
                   }`}
                   style={{ fontFamily: 'var(--font-clash-display)' }}
                 >
-                  {addedToCart ? (
+                  {!allOptionsSelected ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      Selecciona las opciones
+                    </>
+                  ) : addedToCart ? (
                     <>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

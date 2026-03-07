@@ -9,13 +9,21 @@ export interface CartItem {
   price: number
   quantity: number
   image: string
+  options?: Record<string, string>  // e.g. { "Tamaño": "Grande", "Material": "PVC" }
+}
+
+// Helper: generate unique key for a cart item (productId + options combo)
+function cartItemKey(productId: number, options?: Record<string, string>): string {
+  return options && Object.keys(options).length > 0
+    ? `${productId}:${JSON.stringify(options)}`
+    : `${productId}`
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void
-  removeItem: (productId: number) => void
-  updateQuantity: (productId: number, quantity: number) => void
+  removeItem: (productId: number, options?: Record<string, string>) => void
+  updateQuantity: (productId: number, quantity: number, options?: Record<string, string>) => void
   clearCart: () => void
   getTotal: () => number
   getItemCount: () => number
@@ -58,10 +66,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
     setItems(prev => {
-      const existing = prev.find(i => i.productId === item.productId)
+      const key = cartItemKey(item.productId, item.options)
+      const existing = prev.find(i => cartItemKey(i.productId, i.options) === key)
       if (existing) {
         return prev.map(i =>
-          i.productId === item.productId
+          cartItemKey(i.productId, i.options) === key
             ? { ...i, quantity: i.quantity + quantity }
             : i
         )
@@ -71,17 +80,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsCartOpen(true)
   }, [])
 
-  const removeItem = useCallback((productId: number) => {
-    setItems(prev => prev.filter(i => i.productId !== productId))
+  const removeItem = useCallback((productId: number, options?: Record<string, string>) => {
+    const key = cartItemKey(productId, options)
+    setItems(prev => prev.filter(i => cartItemKey(i.productId, i.options) !== key))
   }, [])
 
-  const updateQuantity = useCallback((productId: number, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number, options?: Record<string, string>) => {
+    const key = cartItemKey(productId, options)
     if (quantity <= 0) {
-      setItems(prev => prev.filter(i => i.productId !== productId))
+      setItems(prev => prev.filter(i => cartItemKey(i.productId, i.options) !== key))
       return
     }
     setItems(prev => prev.map(i =>
-      i.productId === productId ? { ...i, quantity } : i
+      cartItemKey(i.productId, i.options) === key ? { ...i, quantity } : i
     ))
   }, [])
 

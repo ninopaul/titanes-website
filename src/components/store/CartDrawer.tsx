@@ -104,59 +104,76 @@ export default function CartDrawer() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item, index) => (
-                    <motion.div
-                      key={item.productId}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex gap-4 p-3 bg-white/[0.02] rounded-xl border border-white/5 group hover:border-white/10 transition-colors duration-200"
-                    >
-                      {/* Thumbnail */}
-                      <div className="w-20 h-20 rounded-lg bg-[#1A1A1D] overflow-hidden flex-shrink-0">
-                        {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center diagonal-lines">
-                            <span className="text-white/10 text-lg font-black" style={{ fontFamily: 'var(--font-clash-display)' }}>T</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[#FAFAFA] text-sm font-medium truncate">{item.name}</h3>
-                        <p className="text-[#D4A853] text-sm font-bold mt-1">${item.price.toFixed(2)}</p>
-
-                        {/* Quantity controls */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                            className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#8A8A8A] text-xs transition-colors"
-                          >
-                            -
-                          </button>
-                          <span className="text-[#FAFAFA] text-xs font-mono w-6 text-center">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#8A8A8A] text-xs transition-colors"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Remove */}
-                      <button
-                        onClick={() => removeItem(item.productId)}
-                        className="self-start p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-500/10 transition-all duration-200"
+                  {items.map((item, index) => {
+                    const itemKey = item.options && Object.keys(item.options).length > 0
+                      ? `${item.productId}:${JSON.stringify(item.options)}`
+                      : `${item.productId}`
+                    return (
+                      <motion.div
+                        key={itemKey}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex gap-4 p-3 bg-white/[0.02] rounded-xl border border-white/5 group hover:border-white/10 transition-colors duration-200"
                       >
-                        <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </motion.div>
-                  ))}
+                        {/* Thumbnail */}
+                        <div className="w-20 h-20 rounded-lg bg-[#1A1A1D] overflow-hidden flex-shrink-0">
+                          {item.image ? (
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center diagonal-lines">
+                              <span className="text-white/10 text-lg font-black" style={{ fontFamily: 'var(--font-clash-display)' }}>T</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-[#FAFAFA] text-sm font-medium truncate">{item.name}</h3>
+
+                          {/* Selected options */}
+                          {item.options && Object.keys(item.options).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {Object.entries(item.options).map(([key, val]) => (
+                                <span key={key} className="px-2 py-0.5 bg-white/5 text-[#8A8A8A] text-[10px] rounded-md border border-white/5">
+                                  {key}: {val}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <p className="text-[#D4A853] text-sm font-bold mt-1">${item.price.toFixed(2)}</p>
+
+                          {/* Quantity controls */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1, item.options)}
+                              className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#8A8A8A] text-xs transition-colors"
+                            >
+                              -
+                            </button>
+                            <span className="text-[#FAFAFA] text-xs font-mono w-6 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1, item.options)}
+                              className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#8A8A8A] text-xs transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Remove */}
+                        <button
+                          onClick={() => removeItem(item.productId, item.options)}
+                          className="self-start p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-500/10 transition-all duration-200"
+                        >
+                          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </motion.div>
+                    )
+                  })}
                 </div>
               )}
             </div>

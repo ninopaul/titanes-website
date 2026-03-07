@@ -14,6 +14,7 @@ interface ProductCardProps {
     imagen: string | null
     categoria_nombre?: string
     cotizable?: boolean
+    opciones?: { nombre: string; valores: string[] }[]
   }
   index?: number
 }
@@ -86,6 +87,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               {product.cotizable || !product.precio ? (
                 <span className="px-4 py-2 bg-white/10 backdrop-blur-sm text-[#FAFAFA] text-xs font-medium rounded-full border border-white/10">
                   Cotizar
+                </span>
+              ) : product.opciones && product.opciones.length > 0 ? (
+                <span className="px-4 py-2 bg-[#D4A853] text-[#0A0A0B] text-xs font-bold rounded-full shadow-[0_0_15px_rgba(212,168,83,0.3)] flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                  Ver Opciones
                 </span>
               ) : (
                 <button

@@ -7,13 +7,19 @@ import storeApi from '@/lib/store-api'
 import ProductCard from '@/components/store/ProductCard'
 
 // Fallback demo data for when API is not available
-const DEMO_CATEGORIES = [
-  { id: 1, nombre: 'Banners y Lonas', slug: 'banners-lonas' },
-  { id: 2, nombre: 'Impresion UV', slug: 'impresion-uv' },
-  { id: 3, nombre: 'Corte Laser', slug: 'corte-laser' },
-  { id: 4, nombre: 'Sublimacion', slug: 'sublimacion' },
-  { id: 5, nombre: 'Senaletica', slug: 'senaletica' },
-  { id: 6, nombre: 'Corporeos', slug: 'corporeos' },
+interface Category {
+  id: number
+  nombre: string
+  slug: string
+}
+
+const DEMO_CATEGORIES: Category[] = [
+  { id: 1, nombre: 'Impresion', slug: 'impresion' },
+  { id: 2, nombre: 'Laser', slug: 'laser' },
+  { id: 3, nombre: 'UV', slug: 'uv' },
+  { id: 4, nombre: 'Textil', slug: 'textil' },
+  { id: 5, nombre: 'Productos', slug: 'productos' },
+  { id: 6, nombre: 'Servicios', slug: 'servicios' },
 ]
 
 const DEMO_PRODUCTS = [
@@ -43,8 +49,8 @@ export default function TiendaClient() {
   const isInView = useInView(headerRef, { once: true })
 
   const [products, setProducts] = useState(DEMO_PRODUCTS)
-  const [categories, setCategories] = useState(DEMO_CATEGORIES)
-  const [activeCategory, setActiveCategory] = useState('')
+  const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES)
+  const [activeCategory, setActiveCategory] = useState('')  // slug-based
   const [search, setSearch] = useState('')
   const [ordering, setOrdering] = useState('')
   const [page, setPage] = useState(1)
@@ -61,7 +67,13 @@ export default function TiendaClient() {
         const data = response?.data !== undefined ? response.data : response
         const items = Array.isArray(data) ? data : (data?.results || [])
         if (items.length > 0) {
-          setCategories(items)
+          // Map API response to Category format
+          const cats: Category[] = items.map((item: any) => ({
+            id: item.id,
+            nombre: item.nombre,
+            slug: item.slug || item.nombre.toLowerCase().replace(/\s+/g, '-'),
+          }))
+          setCategories(cats)
         }
         // API responded successfully — use real data even if no categories yet
         setApiAvailable(true)
@@ -78,7 +90,9 @@ export default function TiendaClient() {
         // Filter demo data locally
         let filtered = [...DEMO_PRODUCTS]
         if (activeCategory) {
-          filtered = filtered.filter(p => p.categoria_nombre === activeCategory)
+          // Find the category name from slug for local filtering
+          const catName = categories.find(c => c.slug === activeCategory)?.nombre
+          filtered = filtered.filter(p => p.categoria_nombre === catName)
         }
         if (search) {
           const s = search.toLowerCase()
@@ -105,15 +119,19 @@ export default function TiendaClient() {
         const data = response?.data !== undefined ? response.data : response
         const rawItems = Array.isArray(data) ? data : (data?.results || [])
         // Map API fields to ProductCard interface
-        const items = rawItems.map((item: any) => ({
-          id: item.id,
-          slug: item.slug,
-          nombre: item.nombre,
-          precio: item.precio_usd ? parseFloat(item.precio_usd) : item.precio ?? null,
-          imagen: item.imagen_principal_url || item.imagen || null,
-          categoria_nombre: item.categoria_nombre,
-          cotizable: item.cotizable ?? false,
-        }))
+        const items = rawItems.map((item: any) => {
+          const precioRaw = item.precio_usd ? parseFloat(item.precio_usd) : item.precio ?? null
+          return {
+            id: item.id,
+            slug: item.slug,
+            nombre: item.nombre,
+            precio: precioRaw && precioRaw > 0 ? precioRaw : null,
+            imagen: item.imagen_principal_url || item.imagen || null,
+            categoria_nombre: item.categoria_nombre,
+            cotizable: item.cotizable ?? false,
+            opciones: item.opciones || [],
+          }
+        })
         setProducts(items)
         const count = data?.count || items.length
         setTotalPages(Math.ceil(count / 12))
@@ -201,9 +219,9 @@ export default function TiendaClient() {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => { setActiveCategory(cat.nombre); setPage(1) }}
+                onClick={() => { setActiveCategory(cat.slug); setPage(1) }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
-                  activeCategory === cat.nombre
+                  activeCategory === cat.slug
                     ? 'bg-[#D4A853] text-[#0A0A0B] shadow-[0_0_20px_rgba(212,168,83,0.3)]'
                     : 'bg-white/5 text-[#8A8A8A] hover:bg-white/10 hover:text-[#FAFAFA] border border-white/5'
                 }`}
@@ -246,7 +264,7 @@ export default function TiendaClient() {
           Mostrando <span className="text-[#D4A853] font-mono font-bold">{products.length}</span>{' '}
           {products.length === 1 ? 'producto' : 'productos'}
           {activeCategory && (
-            <> en <span className="text-[#FAFAFA]">{activeCategory}</span></>
+            <> en <span className="text-[#FAFAFA]">{categories.find(c => c.slug === activeCategory)?.nombre || activeCategory}</span></>
           )}
         </p>
       </div>
