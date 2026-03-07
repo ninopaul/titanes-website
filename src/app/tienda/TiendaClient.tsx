@@ -52,22 +52,24 @@ export default function TiendaClient() {
   const [isLoading, setIsLoading] = useState(false)
   const [apiAvailable, setApiAvailable] = useState(false)
 
-  // Try to fetch from API
+  // Try to fetch from API — check if backend is reachable
   useEffect(() => {
-    async function fetchCategories() {
+    async function checkApi() {
       try {
+        // Try categories first
         const response = await storeApi.getCategorias() as any
         const data = response?.data !== undefined ? response.data : response
         const items = Array.isArray(data) ? data : (data?.results || [])
         if (items.length > 0) {
           setCategories(items)
-          setApiAvailable(true)
         }
+        // API responded successfully — use real data even if no categories yet
+        setApiAvailable(true)
       } catch {
         // API not available, use demo data
       }
     }
-    fetchCategories()
+    checkApi()
   }, [])
 
   useEffect(() => {
