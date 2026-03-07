@@ -2,14 +2,36 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
+import { useCompanyConfig } from '@/lib/company-config'
 
 export default function Preloader() {
   const [loading, setLoading] = useState(true)
+  const [showName, setShowName] = useState(false)
+  const company = useCompanyConfig()
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2200)
     return () => clearTimeout(timer)
   }, [])
+
+  // Wait for config to load from API, or show after 600ms max
+  useEffect(() => {
+    if (showName) return
+    if (company.loaded) {
+      setShowName(true)
+      return
+    }
+    const timeout = setTimeout(() => setShowName(true), 600)
+    return () => clearTimeout(timeout)
+  }, [company.loaded, showName])
+
+  // Use API logo or fallback to static file
+  const logoSrc = company.logo_url || '/logo.png'
+  const isExternal = logoSrc.startsWith('http')
+
+  // Company name for letter animation (uppercase)
+  const brandName = company.nombre.toUpperCase()
 
   return (
     <AnimatePresence>
@@ -29,9 +51,9 @@ export default function Preloader() {
               className="relative mb-8"
             >
               {/* Animated border */}
-              <svg width="80" height="80" viewBox="0 0 80 80" className="absolute -inset-2">
+              <svg width="100" height="100" viewBox="0 0 100 100" className="absolute -inset-3">
                 <rect
-                  x="2" y="2" width="76" height="76" rx="16"
+                  x="2" y="2" width="96" height="96" rx="20"
                   fill="none"
                   stroke="#D4A853"
                   strokeWidth="1"
@@ -39,28 +61,38 @@ export default function Preloader() {
                 />
               </svg>
 
-              <div className="w-16 h-16 bg-gradient-to-br from-[#D4A853] to-[#B8923A] rounded-xl flex items-center justify-center">
-                <span className="text-[#0A0A0B] font-black text-3xl" style={{ fontFamily: 'var(--font-clash-display)' }}>
-                  T
-                </span>
+              <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden">
+                <Image
+                  src={logoSrc}
+                  alt={company.nombre}
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                  priority
+                  unoptimized={isExternal}
+                />
               </div>
             </motion.div>
 
-            {/* Company name reveal */}
-            <div className="flex items-center gap-2 overflow-hidden">
-              {'TITANES'.split('').map((letter, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ y: 40, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.3 + i * 0.06 }}
-                  className="text-[#FAFAFA] text-2xl font-black tracking-[0.2em]"
-                  style={{ fontFamily: 'var(--font-clash-display)' }}
-                >
-                  {letter}
-                </motion.span>
-              ))}
-            </div>
+            {/* Company name reveal — waits for API config */}
+            {showName && (
+              <div className="flex items-center gap-1 overflow-hidden">
+                {brandName.split('').map((letter, i) => (
+                  <motion.span
+                    key={`${letter}-${i}`}
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.4, delay: i * 0.04 }}
+                    className={`text-[#FAFAFA] font-black tracking-[0.1em] ${
+                      brandName.length > 12 ? 'text-lg' : 'text-2xl'
+                    } ${letter === ' ' ? 'w-2' : ''}`}
+                    style={{ fontFamily: 'var(--font-clash-display)' }}
+                  >
+                    {letter === ' ' ? '\u00A0' : letter}
+                  </motion.span>
+                ))}
+              </div>
+            )}
 
             {/* Loading bar */}
             <motion.div

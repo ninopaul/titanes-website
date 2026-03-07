@@ -24,6 +24,7 @@ export interface CompanyConfig {
   google_maps_url: string
   logo_url: string | null
   chatbot_habilitado: boolean
+  loaded: boolean
 }
 
 const DEFAULT_CONFIG: CompanyConfig = {
@@ -41,6 +42,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   google_maps_url: '',
   logo_url: null,
   chatbot_habilitado: true,
+  loaded: false,
 }
 
 const CompanyConfigContext = createContext<CompanyConfig>(DEFAULT_CONFIG)
@@ -87,10 +89,14 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
             google_maps_url: d.google_maps_url || DEFAULT_CONFIG.google_maps_url,
             logo_url: d.logo_url || DEFAULT_CONFIG.logo_url,
             chatbot_habilitado: d.chatbot_habilitado ?? true,
+            loaded: true,
           })
         }
       } catch {
-        // Silently fail — use defaults
+        // Silently fail — use defaults but mark as loaded
+        if (!cancelled) {
+          setConfig(prev => ({ ...prev, loaded: true }))
+        }
       }
     }
 
