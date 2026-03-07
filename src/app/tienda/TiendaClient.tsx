@@ -103,7 +103,17 @@ export default function TiendaClient() {
           ordering,
         }) as any
         const data = response?.data !== undefined ? response.data : response
-        const items = Array.isArray(data) ? data : (data?.results || [])
+        const rawItems = Array.isArray(data) ? data : (data?.results || [])
+        // Map API fields to ProductCard interface
+        const items = rawItems.map((item: any) => ({
+          id: item.id,
+          slug: item.slug,
+          nombre: item.nombre,
+          precio: item.precio_usd ? parseFloat(item.precio_usd) : item.precio ?? null,
+          imagen: item.imagen_principal_url || item.imagen || null,
+          categoria_nombre: item.categoria_nombre,
+          cotizable: item.cotizable ?? false,
+        }))
         setProducts(items)
         const count = data?.count || items.length
         setTotalPages(Math.ceil(count / 12))
