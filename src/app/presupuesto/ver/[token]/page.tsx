@@ -781,7 +781,7 @@ export default function PresupuestoVerPage() {
                                 boxShadow: '0 4px 20px rgba(22, 163, 74, 0.3)',
                             }}
                         >
-                            Aprobar Presupuesto
+                            ✓ Aprobar Presupuesto
                         </button>
                         <button
                             onClick={() => setModal('rechazar')}
@@ -798,7 +798,7 @@ export default function PresupuestoVerPage() {
                                 (e.currentTarget.style.background = 'transparent')
                             }
                         >
-                            Rechazar
+                            ✗ Rechazar
                         </button>
                     </div>
                 )}
@@ -822,7 +822,7 @@ export default function PresupuestoVerPage() {
                 </div>
             </footer>
 
-            {/* Modal */}
+            {/* Modal with notes field */}
             {modal && (
                 <ActionModal
                     type={modal}
