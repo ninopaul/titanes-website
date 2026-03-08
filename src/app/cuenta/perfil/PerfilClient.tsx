@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
+import type { DispositivoConfiado } from '@/lib/store-api'
 import Navbar from '@/components/Navbar'
 
 export default function PerfilClient() {
@@ -25,11 +26,50 @@ export default function PerfilClient() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
+  // Trusted devices state
+  const [dispositivos, setDispositivos] = useState<DispositivoConfiado[]>([])
+  const [loadingDevices, setLoadingDevices] = useState(false)
+  const [deviceError, setDeviceError] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login?redirect=/cuenta/perfil')
     }
   }, [isAuthenticated, isLoading, router])
+
+  const fetchDevices = useCallback(async () => {
+    setLoadingDevices(true)
+    setDeviceError('')
+    try {
+      const response = await storeApi.getDispositivosConfiados()
+      setDispositivos(response.data || [])
+    } catch {
+      // Silently fail - user may not have 2FA enabled
+      setDispositivos([])
+    } finally {
+      setLoadingDevices(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isAuthenticated) fetchDevices()
+  }, [isAuthenticated, fetchDevices])
+
+  const handleDeleteDevice = async (id: number) => {
+    setDeletingId(id)
+    setDeviceError('')
+    try {
+      await storeApi.deleteDispositivoConfiado(id)
+      setDispositivos(prev => prev.filter(d => d.id !== id))
+      setConfirmDeleteId(null)
+    } catch (err) {
+      setDeviceError(err instanceof Error ? err.message : 'Error al revocar dispositivo')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     if (user) {
@@ -238,6 +278,145 @@ export default function PerfilClient() {
             )}
           </motion.button>
         </motion.form>
+
+        {/* ═══════════════════════════════════════ */}
+        {/* Dispositivos Confiados Section */}
+        {/* ═══════════════════════════════════════ */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-[#111113] rounded-2xl border border-white/5 p-6 sm:p-8 mt-6"
+        >
+          {/* Section header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-[#D4A853]/10 border border-[#D4A853]/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-[#D4A853]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[#FAFAFA] font-bold text-sm" style={{ fontFamily: 'var(--font-clash-display)' }}>
+                Dispositivos Confiados
+              </h3>
+              <p className="text-[#6A6A6A] text-xs">Dispositivos que no requieren verificacion 2FA</p>
+            </div>
+          </div>
+
+          {/* Error */}
+          <AnimatePresence>
+            {deviceError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 overflow-hidden"
+              >
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <p className="text-red-400 text-xs">{deviceError}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Loading */}
+          {loadingDevices ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-5 h-5 border-2 border-[#D4A853] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : dispositivos.length === 0 ? (
+            /* Empty state */
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-[#6A6A6A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-[#6A6A6A] text-sm">No hay dispositivos confiados registrados</p>
+              <p className="text-[#4A4A4A] text-xs mt-1">
+                Al iniciar sesion con 2FA, puedes marcar &ldquo;Recordar dispositivo&rdquo;
+              </p>
+            </div>
+          ) : (
+            /* Devices list */
+            <div className="space-y-3">
+              {dispositivos.map((device) => (
+                <motion.div
+                  key={device.id}
+                  layout
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-white/10 transition-all group"
+                >
+                  {/* Device icon */}
+                  <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4.5 h-4.5 text-[#8A8A8A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[#FAFAFA] text-sm font-medium truncate">{device.nombre}</p>
+                      {device.expirado ? (
+                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                          Expirado
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                          Activo
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-[#6A6A6A] text-xs">IP: {device.ip}</span>
+                      <span className="text-[#4A4A4A]">&middot;</span>
+                      <span className="text-[#6A6A6A] text-xs">
+                        Ultimo uso: {new Date(device.ultimo_uso).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-[#4A4A4A] text-[10px] mt-0.5">
+                      Registrado: {new Date(device.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+
+                  {/* Revoke button / Confirm */}
+                  <div className="flex-shrink-0">
+                    {confirmDeleteId === device.id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteDevice(device.id)}
+                          disabled={deletingId === device.id}
+                          className="px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {deletingId === device.id ? (
+                            <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
+                          ) : null}
+                          Confirmar
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-3 py-1.5 text-xs font-medium text-[#6A6A6A] border border-white/5 rounded-lg hover:border-white/10 transition-all"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(device.id)}
+                        className="px-3 py-1.5 text-xs font-medium text-[#6A6A6A] border border-white/5 rounded-lg opacity-0 group-hover:opacity-100 hover:text-red-400 hover:border-red-500/20 transition-all"
+                      >
+                        Revocar
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
     </main>
     </>

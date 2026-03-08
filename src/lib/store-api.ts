@@ -59,6 +59,55 @@ export interface WebConfigResponse {
   chatbot_habilitado: boolean
 }
 
+// ═══════════════════════════════════════
+// Custom error with status + full body
+// ═══════════════════════════════════════
+
+export class ApiError extends Error {
+  status: number;
+  body: Record<string, unknown>;
+  constructor(message: string, status: number, body: Record<string, unknown>) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
+}
+
+// ═══════════════════════════════════════
+// 2FA Types
+// ═══════════════════════════════════════
+
+export interface TwoFARequired {
+  success: true
+  requires_2fa: true
+  session_token: string
+  canal: 'telegram' | 'email'
+  mensaje: string
+}
+
+export interface TwoFAVerifyResponse {
+  success: true
+  access: string
+  refresh: string
+  user: {
+    id: number
+    email: string
+    nombre: string
+    apellido: string
+    telefono: string
+  }
+}
+
+export interface DispositivoConfiado {
+  id: number
+  nombre: string
+  ip: string
+  ultimo_uso: string
+  created_at: string
+  expirado: boolean
+}
+
 class StoreAPI {
   private baseUrl: string;
   private token: string | null = null;
@@ -90,7 +139,8 @@ class StoreAPI {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: 'Error de conexion' }));
-      throw new Error(error.detail || `Error ${res.status}`);
+      const err = new ApiError(error.detail || error.errors?.detail || `Error ${res.status}`, res.status, error);
+      throw err;
     }
 
     return res.json();
@@ -153,6 +203,20 @@ class StoreAPI {
   async getPerfil() { return this.request('/auth/perfil/'); }
   async updatePerfil(data: Record<string, unknown>) {
     return this.request('/auth/perfil/', { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  // 2FA
+  async verificar2FA(data: { session_token: string; codigo: string; recordar_dispositivo: boolean }) {
+    return this.request<TwoFAVerifyResponse>('/auth/verificar-2fa/', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async reenviar2FA(data: { session_token: string }) {
+    return this.request<{ success: true; session_token: string; canal: string; mensaje: string }>('/auth/reenviar-2fa/', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async getDispositivosConfiados() {
+    return this.request<{ success: true; data: DispositivoConfiado[] }>('/auth/dispositivos/');
+  }
+  async deleteDispositivoConfiado(id: number) {
+    return this.request<{ success: true; mensaje: string }>(`/auth/dispositivos/${id}/`, { method: 'DELETE' });
   }
 
   // Pedidos

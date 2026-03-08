@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import storeApi from './store-api'
+import type { TwoFARequired } from './store-api'
 
 interface User {
   id: number
@@ -11,11 +12,14 @@ interface User {
   telefono: string
 }
 
+export type LoginResult = { requires2FA: false } | { requires2FA: true; twoFAData: TwoFARequired }
+
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<LoginResult>
+  completeLoginWith2FA: (access: string, refresh: string, user: User) => void
   register: (data: { email: string; nombre: string; apellido: string; telefono: string; password: string }) => Promise<void>
   loginWithGoogle: (credential: string) => Promise<void>
   logout: () => void
@@ -105,14 +109,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshAuth()
   }, [refreshAuth])
 
-  const login = async (email: string, password: string) => {
-    const data = await storeApi.login({ email, password }) as {
-      access: string
-      refresh: string
-      user: User
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    const data = await storeApi.login({ email, password }) as Record<string, unknown>
+
+    // Check if 2FA is required
+    if (data.requires_2fa === true) {
+      return {
+        requires2FA: true,
+        twoFAData: data as unknown as TwoFARequired,
+      }
     }
-    storeAuth(data.access, data.refresh, data.user)
-    setUser(data.user)
+
+    // Normal login (no 2FA or trusted device)
+    const loginData = data as unknown as { access: string; refresh: string; user: User }
+    storeAuth(loginData.access, loginData.refresh, loginData.user)
+    setUser(loginData.user)
+    return { requires2FA: false }
+  }
+
+  const completeLoginWith2FA = (access: string, refresh: string, userData: User) => {
+    storeAuth(access, refresh, userData)
+    setUser(userData)
   }
 
   const register = async (regData: { email: string; nombre: string; apellido: string; telefono: string; password: string }) => {
@@ -146,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
+      completeLoginWith2FA,
       register,
       loginWithGoogle,
       logout,
