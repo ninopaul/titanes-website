@@ -1,5 +1,64 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1/web';
 
+// ═══════════════════════════════════════
+// Types for API responses
+// ═══════════════════════════════════════
+
+export interface WebMetodoPago {
+  id: number
+  tipo: string
+  tipo_display: string
+  nombre_display: string
+  banco_nombre: string
+  numero_cuenta: string
+  titular: string
+  cedula_rif: string
+  telefono: string
+  email: string
+  instrucciones: string
+  logo_url: string
+}
+
+export interface WebMetodoEnvio {
+  id: number
+  nombre: string
+  tipo: string
+  tipo_display: string
+  precio_usd: number
+  descripcion_corta: string
+  tiempo_estimado: string
+}
+
+export interface WebConfigResponse {
+  empresa: {
+    nombre: string
+    rif: string
+    telefono: string
+    email: string
+    whatsapp: string
+    telegram: string
+    instagram: string
+    tiktok: string
+    direccion: string
+    horario: string
+    google_maps_url: string
+    logo_url: string | null
+    google_analytics_id: string
+  }
+  tasa_bcv: number
+  tasa_paralelo: number
+  fecha_tasa: string | null
+  metodos_pago: WebMetodoPago[]
+  metodos_envio: WebMetodoEnvio[]
+  seo: {
+    meta_keywords: string
+    og_image_url: string
+    favicon_url: string
+    google_analytics_id: string
+  }
+  chatbot_habilitado: boolean
+}
+
 class StoreAPI {
   private baseUrl: string;
   private token: string | null = null;

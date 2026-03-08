@@ -4,9 +4,11 @@ import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
+import { useTasaBcv, formatBs } from '@/hooks/useTasaBcv'
 
 export default function CartDrawer() {
   const { items, isCartOpen, closeCart, removeItem, updateQuantity, getTotal, getItemCount } = useCart()
+  const { tasa_bcv } = useTasaBcv()
   const drawerRef = useRef<HTMLDivElement>(null)
 
   // Close on click outside
@@ -143,6 +145,9 @@ export default function CartDrawer() {
                           )}
 
                           <p className="text-[#D4A853] text-sm font-bold mt-1">${item.price.toFixed(2)}</p>
+                          {tasa_bcv > 0 && (
+                            <p className="text-[#6A6A6A] text-[10px] font-mono">{formatBs(item.price, tasa_bcv)}</p>
+                          )}
 
                           {/* Quantity controls */}
                           <div className="flex items-center gap-2 mt-2">
@@ -185,6 +190,12 @@ export default function CartDrawer() {
                   <span className="text-[#8A8A8A] text-sm">Subtotal</span>
                   <span className="text-[#FAFAFA] text-lg font-bold font-mono">${getTotal().toFixed(2)}</span>
                 </div>
+                {tasa_bcv > 0 && (
+                  <div className="flex items-center justify-between -mt-2">
+                    <span className="text-[#6A6A6A] text-xs">Ref. Bs</span>
+                    <span className="text-[#6A6A6A] text-xs font-mono">{formatBs(getTotal(), tasa_bcv)}</span>
+                  </div>
+                )}
                 <Link href="/checkout" onClick={closeCart}>
                   <motion.button
                     whileHover={{ scale: 1.02 }}

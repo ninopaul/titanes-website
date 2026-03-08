@@ -8,6 +8,7 @@ import storeApi from '@/lib/store-api'
 import { useCart } from '@/components/store/CartProvider'
 import ProductCard from '@/components/store/ProductCard'
 import { COMPANY } from '@/lib/constants'
+import { useTasaBcv, formatBs } from '@/hooks/useTasaBcv'
 
 interface ProductOption {
   nombre: string
@@ -54,6 +55,7 @@ export default function ProductDetailPage() {
   const params = useParams()
   const slug = params?.slug as string
   const { addItem } = useCart()
+  const { tasa_bcv } = useTasaBcv()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [related, setRelated] = useState(DEMO_RELATED)
@@ -302,9 +304,9 @@ export default function ProductDetailPage() {
                   <span className="text-[#D4A853] text-3xl font-black font-mono">${product.precio.toFixed(2)}</span>
                   <span className="text-[#8A8A8A] text-sm">USD</span>
                 </div>
-                {product.precio_bs && (
+                {product.precio && tasa_bcv > 0 && (
                   <p className="text-[#8A8A8A] text-sm mt-1">
-                    Ref. Bs. {product.precio_bs.toFixed(2)}
+                    {formatBs(product.precio, tasa_bcv)}
                   </p>
                 )}
               </div>

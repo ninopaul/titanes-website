@@ -41,10 +41,10 @@ export default function Contact() {
       }
     } catch {
       setSubmitStatus('error')
-      // Fallback: open WhatsApp with the message
+      // Fallback: open Telegram with the message
       const msg = `Hola! Soy ${formState.nombre}.\n\nServicio: ${formState.servicio}\n\n${formState.mensaje}\n\nContacto: ${formState.email} | ${formState.telefono}`
-      const whatsappNum = company.whatsapp.replace(/[^0-9]/g, '')
-      window.open(`https://wa.me/58${whatsappNum}?text=${encodeURIComponent(msg)}`, '_blank')
+      const telegramBot = company.telegram || 'titanes_graficos_bot'
+      window.open(`https://t.me/${telegramBot}?text=${encodeURIComponent(msg)}`, '_blank')
       setTimeout(() => setSubmitStatus('idle'), 3000)
     }
   }

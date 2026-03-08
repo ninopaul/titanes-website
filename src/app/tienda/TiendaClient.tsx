@@ -5,6 +5,7 @@ import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
 import storeApi from '@/lib/store-api'
 import ProductCard from '@/components/store/ProductCard'
+import { useTasaBcv } from '@/hooks/useTasaBcv'
 
 // Fallback demo data for when API is not available
 interface Category {
@@ -47,6 +48,7 @@ const SORT_OPTIONS = [
 export default function TiendaClient() {
   const headerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(headerRef, { once: true })
+  const { tasa_bcv, fecha, desactualizada } = useTasaBcv()
 
   const [products, setProducts] = useState(DEMO_PRODUCTS)
   const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES)
@@ -296,7 +298,7 @@ export default function TiendaClient() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-4">
             {products.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
+              <ProductCard key={product.id} product={product} index={index} tasa_bcv={tasa_bcv} />
             ))}
           </div>
         )}
@@ -334,6 +336,14 @@ export default function TiendaClient() {
           </div>
         )}
       </div>
+
+      {tasa_bcv > 0 && (
+        <div className="text-center text-xs text-[#6A6A6A] mt-8 pb-4">
+          Tasa BCV: Bs. {tasa_bcv.toFixed(2)} / USD
+          {fecha && ` (${fecha})`}
+          {desactualizada && ' - Desactualizada'}
+        </div>
+      )}
     </main>
   )
 }

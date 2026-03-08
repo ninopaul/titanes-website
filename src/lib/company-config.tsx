@@ -14,6 +14,7 @@ export interface CompanyConfig {
   slogan: string
   telefono: string
   whatsapp: string
+  telegram: string
   email: string
   direccion: string
   horario: string
@@ -32,6 +33,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   slogan: COMPANY.tagline,
   telefono: COMPANY.phone,
   whatsapp: COMPANY.phone,
+  telegram: COMPANY.telegram || '',
   email: COMPANY.email,
   direccion: COMPANY.address,
   horario: COMPANY.hours,
@@ -73,21 +75,25 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
         if (!json.success || !json.data) return
 
         const d = json.data
+        // New API returns nested: { empresa: {...}, tasa_bcv, metodos_pago, ... }
+        // Old API returned flat: { empresa_nombre, telefono, ... }
+        const e = d.empresa || d // Support both nested and flat
         if (!cancelled) {
           setConfig({
-            nombre: d.empresa_nombre || DEFAULT_CONFIG.nombre,
-            slogan: d.slogan || DEFAULT_CONFIG.slogan,
-            telefono: d.telefono || DEFAULT_CONFIG.telefono,
-            whatsapp: d.whatsapp || d.telefono || DEFAULT_CONFIG.whatsapp,
-            email: d.email || DEFAULT_CONFIG.email,
-            direccion: d.direccion || DEFAULT_CONFIG.direccion,
-            horario: d.horario || DEFAULT_CONFIG.horario,
-            instagram: d.instagram || DEFAULT_CONFIG.instagram,
-            facebook: d.facebook || DEFAULT_CONFIG.facebook,
-            tiktok: d.tiktok || DEFAULT_CONFIG.tiktok,
-            rif: d.rif || DEFAULT_CONFIG.rif,
-            google_maps_url: d.google_maps_url || DEFAULT_CONFIG.google_maps_url,
-            logo_url: d.logo_url || DEFAULT_CONFIG.logo_url,
+            nombre: e.nombre || d.empresa_nombre || DEFAULT_CONFIG.nombre,
+            slogan: e.slogan || d.slogan || DEFAULT_CONFIG.slogan,
+            telefono: e.telefono || d.telefono || DEFAULT_CONFIG.telefono,
+            whatsapp: e.whatsapp || d.whatsapp || e.telefono || DEFAULT_CONFIG.whatsapp,
+            telegram: e.telegram || d.telegram || DEFAULT_CONFIG.telegram,
+            email: e.email || d.email || DEFAULT_CONFIG.email,
+            direccion: e.direccion || d.direccion || DEFAULT_CONFIG.direccion,
+            horario: e.horario || d.horario || DEFAULT_CONFIG.horario,
+            instagram: e.instagram || d.instagram || DEFAULT_CONFIG.instagram,
+            facebook: e.facebook || d.facebook || DEFAULT_CONFIG.facebook,
+            tiktok: e.tiktok || d.tiktok || DEFAULT_CONFIG.tiktok,
+            rif: e.rif || d.rif || DEFAULT_CONFIG.rif,
+            google_maps_url: e.google_maps_url || d.google_maps_url || DEFAULT_CONFIG.google_maps_url,
+            logo_url: e.logo_url || d.logo_url || DEFAULT_CONFIG.logo_url,
             chatbot_habilitado: d.chatbot_habilitado ?? true,
             loaded: true,
           })

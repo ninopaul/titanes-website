@@ -8,23 +8,36 @@ import { useCart } from '@/components/store/CartProvider'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
 
-const DELIVERY_OPTIONS = [
-  { id: 'retiro', label: 'Retiro en Tienda', desc: 'Retira tu pedido en nuestra sede', price: 0 },
-  { id: 'delivery', label: 'Envio a Domicilio', desc: 'Valencia y alrededores', price: 5.00 },
-  { id: 'encomienda', label: 'Encomienda Nacional', desc: 'Envio por MRW, Zoom, Tealca', price: 0 },
-]
+interface WebMetodoPago {
+  id: number
+  tipo: string
+  tipo_display: string
+  nombre_display: string
+  banco_nombre: string
+  numero_cuenta: string
+  titular: string
+  cedula_rif: string
+  telefono: string
+  email: string
+  instrucciones: string
+  logo_url: string
+}
 
-const PAYMENT_METHODS = [
-  { id: 'pago_movil', label: 'Pago Movil', icon: '📱' },
-  { id: 'transferencia', label: 'Transferencia Bancaria', icon: '🏦' },
-  { id: 'zelle', label: 'Zelle', icon: '💵' },
-  { id: 'efectivo', label: 'Efectivo (en tienda)', icon: '💰' },
-]
+interface WebMetodoEnvio {
+  id: number
+  nombre: string
+  tipo: string
+  tipo_display: string
+  precio_usd: number
+  descripcion_corta: string
+  tiempo_estimado: string
+}
 
-const BANK_INFO = {
-  pago_movil: { banco: 'Banesco', telefono: '0412-1234567', cedula: 'J-12345678-9' },
-  transferencia: { banco: 'Banesco', cuenta: '0134-0000-00-0000000000', rif: 'J-12345678-9' },
-  zelle: { email: 'pagos@titanesgraficos.com.ve' },
+interface SiteConfig {
+  metodos_pago: WebMetodoPago[]
+  metodos_envio: WebMetodoEnvio[]
+  tasa_bcv: number
+  fecha_tasa: string | null
 }
 
 export default function CheckoutClient() {
@@ -33,14 +46,22 @@ export default function CheckoutClient() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   const [step, setStep] = useState(1)
-  const [deliveryType, setDeliveryType] = useState('retiro')
-  const [paymentMethod, setPaymentMethod] = useState('pago_movil')
+  const [deliveryType, setDeliveryType] = useState('')
+  const [selectedShipping, setSelectedShipping] = useState<WebMetodoEnvio | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderComplete, setOrderComplete] = useState(false)
   const [orderNumber, setOrderNumber] = useState<number | null>(null)
   const [orderError, setOrderError] = useState('')
   const [notas, setNotas] = useState('')
-  const [bankInfo, setBankInfo] = useState(BANK_INFO)
+  const [configLoading, setConfigLoading] = useState(true)
+
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>({
+    metodos_pago: [],
+    metodos_envio: [],
+    tasa_bcv: 0,
+    fecha_tasa: null,
+  })
 
   const [address, setAddress] = useState({
     direccion: '',
@@ -49,21 +70,32 @@ export default function CheckoutClient() {
     referencia: '',
   })
 
-  // Load site config for bank details
+  // Load site config for payment methods, shipping, and rates
   useEffect(() => {
     async function loadConfig() {
       try {
         const response = await storeApi.getConfig() as any
-        const data = response?.data !== undefined ? response.data : response
-        if (data?.pago_movil || data?.transferencia || data?.zelle) {
-          setBankInfo({
-            pago_movil: data.pago_movil || BANK_INFO.pago_movil,
-            transferencia: data.transferencia || BANK_INFO.transferencia,
-            zelle: data.zelle || BANK_INFO.zelle,
-          })
+        const raw = response?.data !== undefined ? response.data : response
+        const config: SiteConfig = {
+          metodos_pago: raw.metodos_pago || [],
+          metodos_envio: raw.metodos_envio || [],
+          tasa_bcv: raw.tasa_bcv || 0,
+          fecha_tasa: raw.fecha_tasa || null,
+        }
+        setSiteConfig(config)
+
+        // Auto-select first shipping and payment method if available
+        if (config.metodos_envio.length > 0) {
+          setDeliveryType(config.metodos_envio[0].tipo)
+          setSelectedShipping(config.metodos_envio[0])
+        }
+        if (config.metodos_pago.length > 0) {
+          setPaymentMethod(config.metodos_pago[0].tipo)
         }
       } catch {
-        // Use hardcoded fallback
+        // Use empty — checkout will show "loading" until config arrives
+      } finally {
+        setConfigLoading(false)
       }
     }
     loadConfig()
@@ -75,10 +107,11 @@ export default function CheckoutClient() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  const deliveryOption = DELIVERY_OPTIONS.find(d => d.id === deliveryType)
   const subtotal = getTotal()
-  const shipping = deliveryOption?.price || 0
-  const total = subtotal + shipping
+  const shippingCost = selectedShipping?.precio_usd || 0
+  const totalUsd = subtotal + shippingCost
+  const tasaBcv = siteConfig.tasa_bcv
+  const totalBs = tasaBcv > 0 ? totalUsd * tasaBcv : 0
 
   const handleConfirm = async () => {
     setIsSubmitting(true)
@@ -92,7 +125,7 @@ export default function CheckoutClient() {
         tipo_entrega: deliveryType,
         metodo_pago: paymentMethod,
         notas_cliente: notas || undefined,
-        ...(deliveryType === 'delivery' && {
+        ...(deliveryType !== 'retiro' && {
           direccion_envio: address.direccion,
           ciudad_envio: address.ciudad,
           estado_envio: address.estado,
@@ -184,6 +217,71 @@ export default function CheckoutClient() {
     )
   }
 
+  // Helper to render bank/payment details for a given method
+  const renderPaymentDetails = (metodo: WebMetodoPago) => {
+    switch (metodo.tipo) {
+      case 'pago_movil':
+        return (
+          <div className="space-y-2 text-sm">
+            {metodo.banco_nombre && (
+              <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{metodo.banco_nombre}</span></p>
+            )}
+            {metodo.telefono && (
+              <p className="text-[#8A8A8A]">Telefono: <span className="text-[#FAFAFA] font-mono">{metodo.telefono}</span></p>
+            )}
+            {metodo.cedula_rif && (
+              <p className="text-[#8A8A8A]">Cedula/RIF: <span className="text-[#FAFAFA] font-mono">{metodo.cedula_rif}</span></p>
+            )}
+          </div>
+        )
+      case 'transferencia':
+        return (
+          <div className="space-y-2 text-sm">
+            {metodo.banco_nombre && (
+              <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{metodo.banco_nombre}</span></p>
+            )}
+            {metodo.numero_cuenta && (
+              <p className="text-[#8A8A8A]">Cuenta: <span className="text-[#FAFAFA] font-mono">{metodo.numero_cuenta}</span></p>
+            )}
+            {metodo.titular && (
+              <p className="text-[#8A8A8A]">Titular: <span className="text-[#FAFAFA] font-mono">{metodo.titular}</span></p>
+            )}
+            {metodo.cedula_rif && (
+              <p className="text-[#8A8A8A]">RIF: <span className="text-[#FAFAFA] font-mono">{metodo.cedula_rif}</span></p>
+            )}
+          </div>
+        )
+      case 'zelle':
+        return (
+          <div className="space-y-2 text-sm">
+            {metodo.email && (
+              <p className="text-[#8A8A8A]">Email: <span className="text-[#FAFAFA] font-mono">{metodo.email}</span></p>
+            )}
+            {metodo.titular && (
+              <p className="text-[#8A8A8A]">Titular: <span className="text-[#FAFAFA] font-mono">{metodo.titular}</span></p>
+            )}
+          </div>
+        )
+      case 'binance':
+      case 'paypal':
+        return metodo.instrucciones ? (
+          <div className="text-sm">
+            <p className="text-[#8A8A8A]">{metodo.instrucciones}</p>
+          </div>
+        ) : null
+      case 'efectivo':
+        return null
+      default:
+        return metodo.instrucciones ? (
+          <div className="text-sm">
+            <p className="text-[#8A8A8A]">{metodo.instrucciones}</p>
+          </div>
+        ) : null
+    }
+  }
+
+  const selectedPaymentMethod = siteConfig.metodos_pago.find(m => m.tipo === paymentMethod)
+
   return (
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Navigation */}
@@ -256,32 +354,54 @@ export default function CheckoutClient() {
                 Tipo de Entrega
               </h2>
               <div className="space-y-3 mb-8">
-                {DELIVERY_OPTIONS.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setDeliveryType(opt.id)}
-                    className={`w-full p-4 rounded-xl border text-left transition-all duration-200 ${
-                      deliveryType === opt.id
-                        ? 'bg-[#D4A853]/5 border-[#D4A853]/30'
-                        : 'bg-[#111113] border-white/5 hover:border-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className={`font-medium text-sm ${deliveryType === opt.id ? 'text-[#D4A853]' : 'text-[#FAFAFA]'}`}>
-                          {opt.label}
-                        </p>
-                        <p className="text-[#8A8A8A] text-xs mt-0.5">{opt.desc}</p>
+                {configLoading ? (
+                  // Skeleton loaders while config loads
+                  <>
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-full p-4 rounded-xl border border-white/5 bg-[#111113] animate-pulse">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <div className="h-4 w-32 bg-white/5 rounded" />
+                            <div className="h-3 w-48 bg-white/5 rounded" />
+                          </div>
+                          <div className="h-4 w-12 bg-white/5 rounded" />
+                        </div>
                       </div>
-                      <span className="text-[#8A8A8A] text-sm font-mono">
-                        {opt.price === 0 ? 'Gratis' : `$${opt.price.toFixed(2)}`}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    ))}
+                  </>
+                ) : (
+                  siteConfig.metodos_envio.map(envio => (
+                    <button
+                      key={envio.id}
+                      onClick={() => { setDeliveryType(envio.tipo); setSelectedShipping(envio) }}
+                      className={`w-full p-4 rounded-xl border text-left transition-all duration-200 ${
+                        deliveryType === envio.tipo
+                          ? 'bg-[#D4A853]/5 border-[#D4A853]/30'
+                          : 'bg-[#111113] border-white/5 hover:border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`font-medium text-sm ${deliveryType === envio.tipo ? 'text-[#D4A853]' : 'text-[#FAFAFA]'}`}>
+                            {envio.nombre}
+                          </p>
+                          {envio.descripcion_corta && (
+                            <p className="text-[#8A8A8A] text-xs mt-0.5">{envio.descripcion_corta}</p>
+                          )}
+                          {envio.tiempo_estimado && (
+                            <p className="text-[#6A6A6A] text-xs mt-0.5">{envio.tiempo_estimado}</p>
+                          )}
+                        </div>
+                        <span className="text-[#8A8A8A] text-sm font-mono">
+                          {envio.precio_usd === 0 ? 'Gratis' : `$${envio.precio_usd.toFixed(2)}`}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
 
-              {deliveryType === 'delivery' && (
+              {deliveryType !== 'retiro' && deliveryType !== '' && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -321,7 +441,8 @@ export default function CheckoutClient() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setStep(2)}
-                className="w-full py-3.5 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full hover:bg-[#E8C776] transition-all duration-300"
+                disabled={configLoading || siteConfig.metodos_envio.length === 0}
+                className="w-full py-3.5 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full hover:bg-[#E8C776] transition-all duration-300 disabled:opacity-50"
                 style={{ fontFamily: 'var(--font-clash-display)' }}
               >
                 Continuar al Pago
@@ -342,55 +463,44 @@ export default function CheckoutClient() {
                 Metodo de Pago
               </h2>
               <div className="grid grid-cols-2 gap-3 mb-6">
-                {PAYMENT_METHODS.map(m => (
+                {siteConfig.metodos_pago.map(metodo => (
                   <button
-                    key={m.id}
-                    onClick={() => setPaymentMethod(m.id)}
+                    key={metodo.id}
+                    onClick={() => setPaymentMethod(metodo.tipo)}
                     className={`p-4 rounded-xl border text-center transition-all duration-200 ${
-                      paymentMethod === m.id
+                      paymentMethod === metodo.tipo
                         ? 'bg-[#D4A853]/5 border-[#D4A853]/30'
                         : 'bg-[#111113] border-white/5 hover:border-white/10'
                     }`}
                   >
-                    <span className="text-2xl block mb-1">{m.icon}</span>
-                    <span className={`text-xs font-medium ${paymentMethod === m.id ? 'text-[#D4A853]' : 'text-[#8A8A8A]'}`}>
-                      {m.label}
+                    {metodo.logo_url && (
+                      <img src={metodo.logo_url} alt={metodo.nombre_display} className="w-8 h-8 mx-auto mb-1 object-contain" />
+                    )}
+                    <span className={`text-xs font-medium ${paymentMethod === metodo.tipo ? 'text-[#D4A853]' : 'text-[#8A8A8A]'}`}>
+                      {metodo.nombre_display || metodo.tipo_display}
                     </span>
                   </button>
                 ))}
               </div>
 
               {/* Bank details */}
-              {paymentMethod !== 'efectivo' && (
+              {selectedPaymentMethod && selectedPaymentMethod.tipo !== 'efectivo' && (
                 <div className="p-5 bg-[#111113] rounded-xl border border-white/5 mb-6">
                   <h3 className="text-[#FAFAFA] font-medium text-sm mb-3">Datos para el Pago</h3>
-                  {paymentMethod === 'pago_movil' && (
-                    <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.banco}</span></p>
-                      <p className="text-[#8A8A8A]">Telefono: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.telefono}</span></p>
-                      <p className="text-[#8A8A8A]">Cedula/RIF: <span className="text-[#FAFAFA] font-mono">{bankInfo.pago_movil.cedula}</span></p>
-                    </div>
-                  )}
-                  {paymentMethod === 'transferencia' && (
-                    <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Banco: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.banco}</span></p>
-                      <p className="text-[#8A8A8A]">Cuenta: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.cuenta}</span></p>
-                      <p className="text-[#8A8A8A]">RIF: <span className="text-[#FAFAFA] font-mono">{bankInfo.transferencia.rif}</span></p>
-                    </div>
-                  )}
-                  {paymentMethod === 'zelle' && (
-                    <div className="space-y-2 text-sm">
-                      <p className="text-[#8A8A8A]">Email: <span className="text-[#FAFAFA] font-mono">{bankInfo.zelle.email}</span></p>
-                    </div>
-                  )}
+                  {renderPaymentDetails(selectedPaymentMethod)}
                   <p className="text-[#D4A853] text-xs mt-4">
-                    Monto a pagar: <span className="font-bold font-mono">${total.toFixed(2)}</span>
+                    Monto a pagar: <span className="font-bold font-mono">${totalUsd.toFixed(2)}</span>
+                    {totalBs > 0 && (
+                      <span className="text-[#8A8A8A] font-mono ml-2">
+                        (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </span>
+                    )}
                   </p>
                 </div>
               )}
 
               {/* Upload comprobante */}
-              {paymentMethod !== 'efectivo' && (
+              {selectedPaymentMethod && selectedPaymentMethod.tipo !== 'efectivo' && (
                 <div className="p-5 bg-[#111113] rounded-xl border border-dashed border-white/10 mb-6 text-center">
                   <svg className="w-8 h-8 text-[#8A8A8A]/30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -453,21 +563,36 @@ export default function CheckoutClient() {
                     <span className="text-[#FAFAFA] font-mono">${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#8A8A8A]">Envio ({deliveryOption?.label})</span>
-                    <span className="text-[#FAFAFA] font-mono">{shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`}</span>
+                    <span className="text-[#8A8A8A]">Envio ({selectedShipping?.nombre || deliveryType})</span>
+                    <span className="text-[#FAFAFA] font-mono">{shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold pt-2 border-t border-white/5">
                     <span className="text-[#FAFAFA]">Total</span>
-                    <span className="text-[#D4A853] text-lg font-mono">${total.toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="text-[#D4A853] text-lg font-mono">${totalUsd.toFixed(2)}</span>
+                      {totalBs > 0 && (
+                        <span className="text-[#8A8A8A] text-xs font-mono block">
+                          Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                {siteConfig.tasa_bcv > 0 && (
+                  <p className="text-[#6A6A6A] text-xs text-center mt-2">
+                    Tasa BCV: Bs. {siteConfig.tasa_bcv.toFixed(2)} / USD
+                    {siteConfig.fecha_tasa && ` (${siteConfig.fecha_tasa})`}
+                  </p>
+                )}
               </div>
 
               {/* Payment info summary */}
               <div className="bg-[#111113] rounded-xl border border-white/5 p-5 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#8A8A8A]">Metodo de Pago</span>
-                  <span className="text-[#FAFAFA]">{PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label}</span>
+                  <span className="text-[#FAFAFA]">
+                    {siteConfig.metodos_pago.find(m => m.tipo === paymentMethod)?.nombre_display || paymentMethod}
+                  </span>
                 </div>
               </div>
 

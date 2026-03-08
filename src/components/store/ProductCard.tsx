@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
+import { formatBs } from '@/hooks/useTasaBcv'
 
 interface ProductCardProps {
   product: {
@@ -17,9 +18,10 @@ interface ProductCardProps {
     opciones?: { nombre: string; valores: string[] }[]
   }
   index?: number
+  tasa_bcv?: number
 }
 
-export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+export default function ProductCard({ product, index = 0, tasa_bcv }: ProductCardProps) {
   const { addItem } = useCart()
   const [isHovered, setIsHovered] = useState(false)
 
@@ -120,9 +122,16 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                   Solicitar Cotizacion
                 </span>
               ) : (
-                <span className="text-[#D4A853] font-bold text-lg font-mono">
-                  ${product.precio.toFixed(2)}
-                </span>
+                <div>
+                  <span className="text-[#D4A853] font-bold text-lg font-mono">
+                    ${product.precio.toFixed(2)}
+                  </span>
+                  {product.precio && tasa_bcv && tasa_bcv > 0 && (
+                    <span className="text-[#8A8A8A] text-xs block mt-0.5">
+                      {formatBs(product.precio, tasa_bcv)}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
