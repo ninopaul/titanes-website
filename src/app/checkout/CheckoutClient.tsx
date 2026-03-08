@@ -79,7 +79,7 @@ export default function CheckoutClient() {
         const config: SiteConfig = {
           metodos_pago: raw.metodos_pago || [],
           metodos_envio: raw.metodos_envio || [],
-          tasa_bcv: raw.tasa_bcv || 0,
+          tasa_bcv: Number(raw.tasa_bcv) || 0,
           fecha_tasa: raw.fecha_tasa || null,
         }
         setSiteConfig(config)
@@ -580,7 +580,7 @@ export default function CheckoutClient() {
                 </div>
                 {siteConfig.tasa_bcv > 0 && (
                   <p className="text-[#6A6A6A] text-xs text-center mt-2">
-                    Tasa BCV: Bs. {siteConfig.tasa_bcv.toFixed(2)} / USD
+                    Tasa BCV: Bs. {Number(siteConfig.tasa_bcv).toFixed(2)} / USD
                     {siteConfig.fecha_tasa && ` (${siteConfig.fecha_tasa})`}
                   </p>
                 )}

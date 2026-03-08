@@ -184,10 +184,10 @@ export default function Machinery() {
           {/* Tick marks */}
           {Array.from({ length: 36 }).map((_, i) => {
             const angle = (i * 10 * Math.PI) / 180
-            const x1 = 100 + 48 * Math.cos(angle)
-            const y1 = 100 + 48 * Math.sin(angle)
-            const x2 = 100 + 52 * Math.cos(angle)
-            const y2 = 100 + 52 * Math.sin(angle)
+            const x1 = Math.round((100 + 48 * Math.cos(angle)) * 100) / 100
+            const y1 = Math.round((100 + 48 * Math.sin(angle)) * 100) / 100
+            const x2 = Math.round((100 + 52 * Math.cos(angle)) * 100) / 100
+            const y2 = Math.round((100 + 52 * Math.sin(angle)) * 100) / 100
             return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#D4A853" strokeWidth="0.3" />
           })}
         </motion.svg>

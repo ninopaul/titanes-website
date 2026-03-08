@@ -339,7 +339,7 @@ export default function TiendaClient() {
 
       {tasa_bcv > 0 && (
         <div className="text-center text-xs text-[#6A6A6A] mt-8 pb-4">
-          Tasa BCV: Bs. {tasa_bcv.toFixed(2)} / USD
+          Tasa BCV: Bs. {Number(tasa_bcv).toFixed(2)} / USD
           {fecha && ` (${fecha})`}
           {desactualizada && ' - Desactualizada'}
         </div>
