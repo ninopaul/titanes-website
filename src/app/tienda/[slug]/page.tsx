@@ -34,24 +34,11 @@ interface Product {
   unidad_medida?: string
 }
 
-const DEMO_PRODUCT: Product = {
-  id: 1,
-  slug: 'banner-13oz',
-  nombre: 'Banner 13oz por Metro',
-  descripcion: 'Banner de alta calidad para exteriores e interiores. Material resistente a la intemperie, ideal para publicidad, eventos y senalizacion. Impresion en alta resolucion con tintas ecosolventes Mimaki que garantizan colores vibrantes y durabilidad.',
-  precio: 12.50,
-  imagen: null,
-  imagenes: [],
-  categoria_nombre: 'Banners y Lonas',
-  cotizable: false,
-  requiere_archivo: true,
+interface Medida {
+  ancho: number
+  alto: number
+  descripcion: string
 }
-
-const DEMO_RELATED = [
-  { id: 2, slug: 'lona-frontlit', nombre: 'Lona Frontlit Iluminada', precio: 18.00, imagen: null, categoria_nombre: 'Banners y Lonas', cotizable: false },
-  { id: 4, slug: 'vinil-adhesivo-m2', nombre: 'Vinil Adhesivo por M2', precio: 15.00, imagen: null, categoria_nombre: 'Banners y Lonas', cotizable: false },
-  { id: 9, slug: 'microperforado-vitrina', nombre: 'Microperforado para Vitrina', precio: 22.00, imagen: null, categoria_nombre: 'Banners y Lonas', cotizable: false },
-]
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -61,7 +48,7 @@ export default function ProductDetailPage() {
   const { tasa_bcv } = useTasaBcv()
 
   const [product, setProduct] = useState<Product | null>(null)
-  const [related, setRelated] = useState(DEMO_RELATED)
+  const [related, setRelated] = useState<any[]>([])
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -69,6 +56,8 @@ export default function ProductDetailPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [isFavorite, setIsFavorite] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  // Medidas para productos por M²
+  const [medidas, setMedidas] = useState<Medida[]>([{ ancho: 1, alto: 1, descripcion: '' }])
 
   useEffect(() => {
     async function fetchProduct() {
@@ -78,7 +67,7 @@ export default function ProductDetailPage() {
         const data = response?.data !== undefined ? response.data : response
         // Map API fields to Product interface
         const precioRaw = data.precio_usd ? parseFloat(data.precio_usd) : data.precio ?? null
-        setProduct({
+        const prod: Product = {
           id: data.id,
           slug: data.slug,
           nombre: data.nombre,
@@ -92,10 +81,35 @@ export default function ProductDetailPage() {
           precio_bs: data.precio_bs ? parseFloat(data.precio_bs) : null,
           opciones: data.opciones || [],
           unidad_medida: data.unidad_medida || '',
-        })
+        }
+        setProduct(prod)
+
+        // Fetch related products from same category
+        const catSlug = data.categoria_slug || ''
+        if (catSlug) {
+          try {
+            const relRes = await storeApi.getProductos({ categoria: catSlug }) as any
+            const relData = relRes?.data !== undefined ? relRes.data : relRes
+            const relResults = Array.isArray(relData) ? relData : (relData?.results || [])
+            // Map and exclude current product
+            const mapped = relResults
+              .filter((r: any) => r.slug !== slug)
+              .slice(0, 3)
+              .map((r: any) => ({
+                id: r.id,
+                slug: r.slug,
+                nombre: r.nombre,
+                precio: r.precio_usd ? parseFloat(r.precio_usd) : null,
+                imagen: r.imagen_principal_url || null,
+                categoria_nombre: r.categoria_nombre,
+                cotizable: r.cotizable ?? false,
+              }))
+            setRelated(mapped)
+          } catch { /* silent */ }
+        }
       } catch {
-        // Use demo data
-        setProduct({ ...DEMO_PRODUCT, slug })
+        // Product not found
+        setProduct(null)
       } finally {
         setIsLoading(false)
         setSelectedOptions({})
@@ -108,18 +122,53 @@ export default function ProductDetailPage() {
   const allOptionsSelected = !product?.opciones?.length ||
     product.opciones.every(opt => selectedOptions[opt.nombre])
 
+  // Calculate total area for M² products
+  const isM2Product = product?.unidad_medida === 'mts2'
+  const totalArea = isM2Product
+    ? medidas.reduce((sum, m) => sum + (m.ancho * m.alto), 0)
+    : 0
+  const m2Price = isM2Product && product?.precio
+    ? product.precio * totalArea * quantity
+    : 0
+
+  const addMedida = () => {
+    setMedidas(prev => [...prev, { ancho: 1, alto: 1, descripcion: '' }])
+  }
+  const removeMedida = (idx: number) => {
+    setMedidas(prev => prev.filter((_, i) => i !== idx))
+  }
+  const updateMedida = (idx: number, field: keyof Medida, value: string) => {
+    setMedidas(prev => prev.map((m, i) => i === idx ? { ...m, [field]: field === 'descripcion' ? value : parseFloat(value) || 0 } : m))
+  }
+
   const handleAddToCart = () => {
-    if (!product || product.cotizable || !product.precio) return
+    if (!product || !product.precio) return
     if (!allOptionsSelected) return
     const hasOptions = product.opciones && product.opciones.length > 0
-    addItem({
-      productId: product.id,
-      slug: product.slug,
-      name: product.nombre,
-      price: product.precio,
-      image: product.imagen || '',
-      ...(hasOptions ? { options: { ...selectedOptions } } : {}),
-    }, quantity)
+
+    // For M² products, include medidas and calculate price based on area
+    if (isM2Product) {
+      if (totalArea <= 0) return
+      addItem({
+        productId: product.id,
+        slug: product.slug,
+        name: product.nombre,
+        price: product.precio * totalArea,  // price = rate per m² × total area
+        image: product.imagen || '',
+        medidas: medidas.map(m => ({ ancho: m.ancho, alto: m.alto, descripcion: m.descripcion })),
+        unidad_medida: 'mts2',
+        ...(hasOptions ? { options: { ...selectedOptions } } : {}),
+      }, quantity)
+    } else {
+      addItem({
+        productId: product.id,
+        slug: product.slug,
+        name: product.nombre,
+        price: product.precio,
+        image: product.imagen || '',
+        ...(hasOptions ? { options: { ...selectedOptions } } : {}),
+      }, quantity)
+    }
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
@@ -334,12 +383,26 @@ export default function ProductDetailPage() {
             )}
 
             {/* Price */}
-            {product.cotizable || !product.precio ? (
+            {product.cotizable && !isM2Product ? (
               <div className="p-4 bg-[#D4A853]/5 border border-[#D4A853]/20 rounded-xl mb-6">
                 <p className="text-[#D4A853] font-bold text-sm mb-1">Producto Cotizable</p>
                 <p className="text-[#8A8A8A] text-xs">El precio depende de las especificaciones. Contactanos para una cotizacion personalizada.</p>
               </div>
-            ) : (
+            ) : isM2Product && product.precio ? (
+              <div className="mb-6">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-[#D4A853] text-3xl font-black font-mono">
+                    ${Number(product.precio).toFixed(2)}
+                  </span>
+                  <span className="text-[#8A8A8A] text-sm">/ m²</span>
+                </div>
+                {product.precio && tasa_bcv > 0 && (
+                  <p className="text-[#8A8A8A] text-sm mt-1">
+                    {formatBs(product.precio, tasa_bcv)} / m²
+                  </p>
+                )}
+              </div>
+            ) : product.precio ? (
               <div className="mb-6">
                 <div className="flex items-baseline gap-3">
                   <span className="text-[#D4A853] text-3xl font-black font-mono">
@@ -358,10 +421,97 @@ export default function ProductDetailPage() {
                   </p>
                 )}
               </div>
+            ) : null}
+
+            {/* Medidas para productos por M² */}
+            {isM2Product && product.precio && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[#FAFAFA] font-medium text-sm">Medidas del Trabajo</h3>
+                  <button
+                    onClick={addMedida}
+                    className="text-xs text-[#D4A853] hover:text-[#E8C776] transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Agregar otra medida
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {medidas.map((m, idx) => (
+                    <div key={idx} className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <label className="text-[#8A8A8A] text-[10px] uppercase tracking-wider">Ancho (m)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            value={m.ancho || ''}
+                            onChange={(e) => updateMedida(idx, 'ancho', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 bg-[#0A0A0B] border border-white/10 rounded-lg text-[#FAFAFA] text-sm font-mono focus:outline-none focus:border-[#D4A853]/40"
+                            placeholder="1.0"
+                          />
+                        </div>
+                        <span className="text-[#6A6A6A] text-lg mt-4">×</span>
+                        <div className="flex-1">
+                          <label className="text-[#8A8A8A] text-[10px] uppercase tracking-wider">Alto (m)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            value={m.alto || ''}
+                            onChange={(e) => updateMedida(idx, 'alto', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 bg-[#0A0A0B] border border-white/10 rounded-lg text-[#FAFAFA] text-sm font-mono focus:outline-none focus:border-[#D4A853]/40"
+                            placeholder="1.0"
+                          />
+                        </div>
+                        <div className="text-center mt-4 min-w-[60px]">
+                          <span className="text-[#D4A853] text-sm font-mono font-bold">{(m.ancho * m.alto).toFixed(2)}</span>
+                          <span className="text-[#8A8A8A] text-[10px] block">m²</span>
+                        </div>
+                        {medidas.length > 1 && (
+                          <button
+                            onClick={() => removeMedida(idx)}
+                            className="mt-4 text-[#8A8A8A] hover:text-red-400 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={m.descripcion}
+                        onChange={(e) => updateMedida(idx, 'descripcion', e.target.value)}
+                        className="w-full px-3 py-1.5 bg-[#0A0A0B] border border-white/5 rounded-lg text-[#FAFAFA] text-xs focus:outline-none focus:border-[#D4A853]/30 placeholder-[#6A6A6A]"
+                        placeholder="Descripcion (ej: Banner principal, Pared norte...)"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Summary */}
+                <div className="mt-3 p-3 bg-[#D4A853]/5 border border-[#D4A853]/20 rounded-xl">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#8A8A8A]">Area total:</span>
+                    <span className="text-[#D4A853] font-mono font-bold">{totalArea.toFixed(2)} m²</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-1">
+                    <span className="text-[#8A8A8A]">Precio por m²:</span>
+                    <span className="text-[#FAFAFA] font-mono">${Number(product.precio).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-1 pt-1 border-t border-[#D4A853]/10">
+                    <span className="text-[#FAFAFA] font-medium">Total estimado:</span>
+                    <span className="text-[#D4A853] font-mono font-bold text-lg">${m2Price.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Quantity + Add to Cart */}
-            {!product.cotizable && product.precio && (
+            {((!product.cotizable && product.precio) || (isM2Product && product.precio)) && (
               <div className="space-y-4 mb-6">
                 <div className="flex items-center gap-4">
                   <span className="text-[#8A8A8A] text-sm">Cantidad:</span>
@@ -422,8 +572,8 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Cotizar button */}
-            {product.cotizable && (
+            {/* Cotizar button (only for non-M² cotizables) */}
+            {product.cotizable && !isM2Product && (
               <a href={telegramUrl} target="_blank" rel="noopener noreferrer">
                 <motion.button
                   whileHover={{ scale: 1.02 }}

@@ -126,6 +126,7 @@ export default function CheckoutClient() {
         items: items.map(item => ({
           producto_id: item.productId,
           cantidad: item.quantity,
+          ...(item.medidas && item.medidas.length > 0 ? { medidas: item.medidas } : {}),
         })),
         tipo_entrega: deliveryType,
         envio_id: selectedShipping?.id || undefined,
@@ -720,13 +721,25 @@ export default function CheckoutClient() {
               <div className="bg-[#111113] rounded-xl border border-white/5 p-5 mb-6">
                 <h3 className="text-[#FAFAFA] font-medium text-sm mb-4">Productos</h3>
                 <div className="space-y-3">
-                  {items.map(item => (
-                    <div key={item.productId} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#8A8A8A] text-xs font-mono">{item.quantity}x</span>
-                        <span className="text-[#FAFAFA] text-sm">{item.name}</span>
+                  {items.map((item, idx) => (
+                    <div key={`${item.productId}-${idx}`} className="py-2 border-b border-white/5 last:border-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[#8A8A8A] text-xs font-mono">{item.quantity}x</span>
+                          <span className="text-[#FAFAFA] text-sm">{item.name}</span>
+                        </div>
+                        <span className="text-[#FAFAFA] font-mono text-sm">${(item.price * item.quantity).toFixed(2)}</span>
                       </div>
-                      <span className="text-[#FAFAFA] font-mono text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                      {item.medidas && item.medidas.length > 0 && (
+                        <div className="ml-8 mt-1 space-y-0.5">
+                          {item.medidas.map((m, mi) => (
+                            <p key={mi} className="text-[#8A8A8A] text-xs">
+                              {m.ancho}m × {m.alto}m = {(m.ancho * m.alto).toFixed(2)} m²
+                              {m.descripcion && <span className="text-[#6A6A6A] ml-1">({m.descripcion})</span>}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

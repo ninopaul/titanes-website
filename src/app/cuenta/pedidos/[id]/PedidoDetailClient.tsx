@@ -71,7 +71,10 @@ export default function PedidoDetailClient() {
             ...item,
             nombre: item.producto_nombre || item.nombre || 'Producto',
             precio: Number(item.precio_unitario || item.precio || 0),
+            item_subtotal: Number(item.subtotal || 0),
             imagen: item.imagen || null,
+            medidas: item.medidas || [],
+            unidad_medida: item.unidad_medida || 'unidad',
           })),
         }
         setOrder(mapped)
@@ -212,10 +215,22 @@ export default function PedidoDetailClient() {
                   <p className="text-[#FAFAFA] text-sm font-medium truncate">{item.nombre}</p>
                   <p className="text-[#8A8A8A] text-xs">
                     {item.cantidad} x ${Number(item.precio || 0).toFixed(2)}
+                    {item.unidad_medida === 'mts2' && '/m²'}
+                    {item.unidad_medida === 'ml' && '/ml'}
                   </p>
+                  {item.medidas && item.medidas.length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {item.medidas.map((m: any, idx: number) => (
+                        <p key={idx} className="text-[#8A8A8A] text-xs">
+                          {m.ancho}m × {m.alto}m = {(m.ancho * m.alto).toFixed(2)} m²
+                          {m.descripcion && <span className="text-[#D4A853]/60 ml-1">({m.descripcion})</span>}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <span className="text-[#FAFAFA] font-mono text-sm font-bold">
-                  ${(item.cantidad * Number(item.precio || 0)).toFixed(2)}
+                  ${(item.item_subtotal > 0 ? item.item_subtotal : item.cantidad * Number(item.precio || 0)).toFixed(2)}
                 </span>
               </div>
             ))}

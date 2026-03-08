@@ -2,6 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 
+export interface CartItemMedida {
+  ancho: number
+  alto: number
+  copias?: number
+  descripcion?: string
+}
+
 export interface CartItem {
   productId: number
   slug: string
@@ -10,13 +17,16 @@ export interface CartItem {
   quantity: number
   image: string
   options?: Record<string, string>  // e.g. { "Tamaño": "Grande", "Material": "PVC" }
+  medidas?: CartItemMedida[]        // For M² products: [{ancho, alto, copias, descripcion}]
+  unidad_medida?: string            // mts2, ml, unidad, etc.
 }
 
-// Helper: generate unique key for a cart item (productId + options combo)
-function cartItemKey(productId: number, options?: Record<string, string>): string {
-  return options && Object.keys(options).length > 0
-    ? `${productId}:${JSON.stringify(options)}`
-    : `${productId}`
+// Helper: generate unique key for a cart item (productId + options + medidas combo)
+function cartItemKey(productId: number, options?: Record<string, string>, medidas?: CartItemMedida[]): string {
+  let key = `${productId}`
+  if (options && Object.keys(options).length > 0) key += `:${JSON.stringify(options)}`
+  if (medidas && medidas.length > 0) key += `:m${JSON.stringify(medidas)}`
+  return key
 }
 
 interface CartContextType {
@@ -66,11 +76,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
     setItems(prev => {
-      const key = cartItemKey(item.productId, item.options)
-      const existing = prev.find(i => cartItemKey(i.productId, i.options) === key)
+      const key = cartItemKey(item.productId, item.options, item.medidas)
+      const existing = prev.find(i => cartItemKey(i.productId, i.options, i.medidas) === key)
       if (existing) {
         return prev.map(i =>
-          cartItemKey(i.productId, i.options) === key
+          cartItemKey(i.productId, i.options, i.medidas) === key
             ? { ...i, quantity: i.quantity + quantity }
             : i
         )
