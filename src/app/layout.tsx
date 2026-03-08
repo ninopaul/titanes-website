@@ -3,6 +3,7 @@ import { displayFont, bodyFont, monoFont } from '@/lib/fonts'
 import { CartProvider } from '@/components/store/CartProvider'
 import { AuthProvider } from '@/lib/auth-context'
 import { CompanyConfigProvider } from '@/lib/company-config'
+import GoogleOAuthWrapper from '@/components/GoogleOAuthWrapper'
 import JsonLd from '@/components/JsonLd'
 import './globals.css'
 
@@ -60,11 +61,13 @@ export default function RootLayout({
       >
         <JsonLd />
         <CompanyConfigProvider>
-          <AuthProvider>
-            <CartProvider>
-              {children}
-            </CartProvider>
-          </AuthProvider>
+          <GoogleOAuthWrapper>
+            <AuthProvider>
+              <CartProvider>
+                {children}
+              </CartProvider>
+            </AuthProvider>
+          </GoogleOAuthWrapper>
         </CompanyConfigProvider>
       </body>
     </html>

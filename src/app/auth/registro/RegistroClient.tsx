@@ -5,10 +5,11 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function RegistroClient() {
   const router = useRouter()
-  const { register, isAuthenticated } = useAuth()
+  const { register, loginWithGoogle, isAuthenticated } = useAuth()
 
   const [form, setForm] = useState({
     nombre: '',
@@ -221,6 +222,39 @@ export default function RegistroClient() {
               )}
             </motion.button>
           </form>
+
+          {/* Google OAuth */}
+          <div className="mt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-[#6A6A6A] text-xs">o registrate con</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+            <div className="flex justify-center [&_iframe]:!rounded-xl">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (credentialResponse.credential) {
+                    setErrors({})
+                    setIsLoading(true)
+                    try {
+                      await loginWithGoogle(credentialResponse.credential)
+                      router.push('/cuenta')
+                    } catch (err) {
+                      setErrors({ general: err instanceof Error ? err.message : 'Error con Google' })
+                    } finally {
+                      setIsLoading(false)
+                    }
+                  }
+                }}
+                onError={() => setErrors({ general: 'Error al conectar con Google' })}
+                theme="filled_black"
+                size="large"
+                width="350"
+                text="signup_with"
+                locale="es"
+              />
+            </div>
+          </div>
         </div>
 
         <p className="text-center text-[#8A8A8A] text-sm mt-6">

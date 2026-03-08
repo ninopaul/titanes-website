@@ -5,12 +5,13 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function LoginClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/cuenta'
-  const { login, isAuthenticated } = useAuth()
+  const { login, loginWithGoogle, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -144,6 +145,39 @@ export default function LoginClient() {
               )}
             </motion.button>
           </form>
+
+          {/* Google OAuth */}
+          <div className="mt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-[#6A6A6A] text-xs">o continua con</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+            <div className="flex justify-center [&_iframe]:!rounded-xl">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (credentialResponse.credential) {
+                    setError('')
+                    setIsLoading(true)
+                    try {
+                      await loginWithGoogle(credentialResponse.credential)
+                      router.push(redirect)
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Error con Google')
+                    } finally {
+                      setIsLoading(false)
+                    }
+                  }
+                }}
+                onError={() => setError('Error al conectar con Google')}
+                theme="filled_black"
+                size="large"
+                width="350"
+                text="continue_with"
+                locale="es"
+              />
+            </div>
+          </div>
         </div>
 
         <p className="text-center text-[#8A8A8A] text-sm mt-6">

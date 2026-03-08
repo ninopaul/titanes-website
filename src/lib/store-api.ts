@@ -144,6 +144,9 @@ class StoreAPI {
   async login(data: { email: string; password: string }) {
     return this.request('/auth/login/', { method: 'POST', body: JSON.stringify(data) });
   }
+  async googleLogin(credential: string) {
+    return this.request('/auth/google/', { method: 'POST', body: JSON.stringify({ credential }) });
+  }
   async refreshToken(refresh: string) {
     return this.request('/auth/refresh/', { method: 'POST', body: JSON.stringify({ refresh }) });
   }

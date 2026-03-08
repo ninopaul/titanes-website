@@ -17,6 +17,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (data: { email: string; nombre: string; apellido: string; telefono: string; password: string }) => Promise<void>
+  loginWithGoogle: (credential: string) => Promise<void>
   logout: () => void
   refreshAuth: () => Promise<void>
 }
@@ -124,6 +125,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }
 
+  const loginWithGoogle = async (credential: string) => {
+    const data = await storeApi.googleLogin(credential) as {
+      access: string
+      refresh: string
+      user: User
+    }
+    storeAuth(data.access, data.refresh, data.user)
+    setUser(data.user)
+  }
+
   const logout = () => {
     clearAuth()
     setUser(null)
@@ -136,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       register,
+      loginWithGoogle,
       logout,
       refreshAuth,
     }}>
