@@ -124,6 +124,7 @@ export default function CheckoutClient() {
           cantidad: item.quantity,
         })),
         tipo_entrega: deliveryType,
+        envio_id: selectedShipping?.id || undefined,
         metodo_pago: paymentMethod,
         notas_cliente: notas || undefined,
         ...(deliveryType !== 'retiro' && {

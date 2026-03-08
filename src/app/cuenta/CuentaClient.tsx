@@ -44,7 +44,13 @@ export default function CuentaClient() {
         const data = response?.data !== undefined ? response.data : response
         const items = Array.isArray(data) ? data : (data?.results || [])
         if (items.length > 0 || data !== undefined) {
-          setOrders(items)
+          const mapped = items.map((o: any) => ({
+            ...o,
+            total: Number(o.total_usd || o.total || 0),
+            fecha: o.created_at ? new Date(o.created_at).toLocaleDateString('es-VE') : (o.fecha || ''),
+            items_count: o.items_count ?? o.items?.length ?? 0,
+          }))
+          setOrders(mapped)
         }
       } catch {
         // Keep demo data as fallback

@@ -53,7 +53,25 @@ export default function PedidoDetailClient() {
         const response = await storeApi.getMiPedido(Number(orderId)) as any
         const data = response?.data !== undefined ? response.data : response
         if (data && data.id) {
-          setOrder(data)
+          // Map API field names to what the component expects
+          const mapped = {
+            ...data,
+            total: Number(data.total_usd || data.total || 0),
+            subtotal: Number(data.subtotal || 0),
+            envio: Number(data.envio || 0),
+            fecha: data.created_at ? new Date(data.created_at).toLocaleDateString('es-VE') : (data.fecha || ''),
+            metodo_pago: data.metodo_pago_display || data.metodo_pago || '',
+            tipo_entrega: data.tipo_entrega_display || data.tipo_entrega || '',
+            direccion: data.direccion_envio || data.direccion || '',
+            fecha_estimada: data.fecha_estimada_entrega || data.fecha_estimada || null,
+            items: (data.items || []).map((item: any) => ({
+              ...item,
+              nombre: item.producto_nombre || item.nombre || 'Producto',
+              precio: Number(item.precio_unitario || item.precio || 0),
+              imagen: item.imagen || null,
+            })),
+          }
+          setOrder(mapped)
         }
       } catch {
         // Keep demo data as fallback
