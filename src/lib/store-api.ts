@@ -173,6 +173,15 @@ class StoreAPI {
     return res.json();
   }
 
+  // Favoritos
+  async getFavoritos() { return this.request('/favoritos/'); }
+  async addFavorito(productoId: number) {
+    return this.request('/favoritos/', { method: 'POST', body: JSON.stringify({ producto_id: productoId }) });
+  }
+  async removeFavorito(productoId: number) {
+    return this.request(`/favoritos/${productoId}/`, { method: 'DELETE' });
+  }
+
   // Cupones
   async validarCupon(codigo: string) {
     return this.request('/validar-cupon/', { method: 'POST', body: JSON.stringify({ codigo }) });

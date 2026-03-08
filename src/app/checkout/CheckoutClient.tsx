@@ -56,6 +56,10 @@ export default function CheckoutClient() {
   const [orderError, setOrderError] = useState('')
   const [notas, setNotas] = useState('')
   const [configLoading, setConfigLoading] = useState(true)
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null)
+  const [comprobanteUploading, setComprobanteUploading] = useState(false)
+  const [comprobanteUploaded, setComprobanteUploaded] = useState(false)
+  const [comprobanteError, setComprobanteError] = useState('')
 
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({
     metodos_pago: [],
@@ -145,6 +149,40 @@ export default function CheckoutClient() {
     }
   }
 
+  const handleComprobanteUpload = async () => {
+    if (!comprobanteFile || !orderNumber) return
+    setComprobanteUploading(true)
+    setComprobanteError('')
+    try {
+      const formData = new FormData()
+      formData.append('comprobante', comprobanteFile)
+      await storeApi.subirComprobante(orderNumber, formData)
+      setComprobanteUploaded(true)
+    } catch (err) {
+      setComprobanteError(err instanceof Error ? err.message : 'Error al subir el comprobante')
+    } finally {
+      setComprobanteUploading(false)
+    }
+  }
+
+  const handleComprobanteSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Validate file type
+    const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+    if (!allowed.includes(file.type)) {
+      setComprobanteError('Formato no permitido. Solo JPG, PNG o PDF.')
+      return
+    }
+    // Validate size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setComprobanteError('El archivo no debe superar los 10MB.')
+      return
+    }
+    setComprobanteError('')
+    setComprobanteFile(file)
+  }
+
   if (authLoading) {
     return (
       <main className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
@@ -172,7 +210,7 @@ export default function CheckoutClient() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
+          className="text-center max-w-lg w-full"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -195,6 +233,137 @@ export default function CheckoutClient() {
           <p className="text-[#8A8A8A] text-sm mb-6">
             Tu pedido ha sido registrado exitosamente. Te enviaremos un correo con los detalles y podras rastrear el estado desde tu cuenta.
           </p>
+
+          {/* Comprobante Upload Section */}
+          {orderNumber && paymentMethod !== 'efectivo' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-[#111113] rounded-xl border border-white/5 p-5 mb-6 text-left"
+            >
+              <h3 className="text-[#FAFAFA] font-bold text-sm mb-3" style={{ fontFamily: 'var(--font-clash-display)' }}>
+                Sube tu Comprobante de Pago
+              </h3>
+              {comprobanteUploaded ? (
+                <div className="flex items-center gap-3 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-green-400 font-medium text-sm">Comprobante enviado</p>
+                    <p className="text-[#8A8A8A] text-xs mt-0.5">
+                      La tasa ha sido congelada al momento de tu pago. Verificaremos tu comprobante lo antes posible.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[#8A8A8A] text-xs mb-4">
+                    Adjunta tu comprobante para agilizar la verificacion. Formatos: JPG, PNG o PDF (max. 10MB).
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={handleComprobanteSelect}
+                      className="hidden"
+                      id="comprobante-input"
+                    />
+                    {comprobanteFile ? (
+                      <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+                        <div className="w-10 h-10 rounded-lg bg-[#D4A853]/10 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 text-[#D4A853]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#FAFAFA] text-sm truncate">{comprobanteFile.name}</p>
+                          <p className="text-[#8A8A8A] text-xs">{(comprobanteFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                        <button
+                          onClick={() => { setComprobanteFile(null); setComprobanteError('') }}
+                          className="text-[#8A8A8A] hover:text-red-400 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="comprobante-input"
+                        className="flex flex-col items-center gap-2 p-6 border border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#D4A853]/30 hover:bg-white/[0.02] transition-all duration-300"
+                      >
+                        <svg className="w-8 h-8 text-[#8A8A8A]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span className="text-[#8A8A8A] text-xs">Haz clic para seleccionar tu comprobante</span>
+                      </label>
+                    )}
+                  </div>
+                  {comprobanteError && (
+                    <p className="text-red-400 text-xs mt-2">{comprobanteError}</p>
+                  )}
+                  {comprobanteFile && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleComprobanteUpload}
+                      disabled={comprobanteUploading}
+                      className="w-full mt-3 py-3 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full hover:bg-[#E8C776] transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ fontFamily: 'var(--font-clash-display)' }}
+                    >
+                      {comprobanteUploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-[#0A0A0B] border-t-transparent rounded-full animate-spin" />
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Enviar Comprobante
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* Telegram Bot Link */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-6"
+          >
+            <a
+              href={`https://t.me/TitanesGraficosBot?start=pedido_${orderNumber || ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 bg-[#0088cc]/5 border border-[#0088cc]/20 rounded-xl hover:bg-[#0088cc]/10 transition-all duration-300 group"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#0088cc]/20 transition-colors">
+                <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-[#FAFAFA] font-medium text-sm">Recibe actualizaciones por Telegram</p>
+                <p className="text-[#8A8A8A] text-xs mt-0.5">Conecta con @TitanesGraficosBot para recibir notificaciones de tu pedido</p>
+              </div>
+              <svg className="w-4 h-4 text-[#8A8A8A] group-hover:text-[#0088cc] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </motion.div>
+
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/cuenta/pedidos">
               <motion.button

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import storeApi from '@/lib/store-api'
 import { useCart } from '@/components/store/CartProvider'
+import { useAuth } from '@/lib/auth-context'
 import ProductCard from '@/components/store/ProductCard'
 import { COMPANY } from '@/lib/constants'
 import { useTasaBcv, formatBs } from '@/hooks/useTasaBcv'
@@ -56,6 +57,7 @@ export default function ProductDetailPage() {
   const params = useParams()
   const slug = params?.slug as string
   const { addItem } = useCart()
+  const { isAuthenticated } = useAuth()
   const { tasa_bcv } = useTasaBcv()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -65,6 +67,8 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [addedToCart, setAddedToCart] = useState(false)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
 
   useEffect(() => {
     async function fetchProduct() {
@@ -118,6 +122,24 @@ export default function ProductDetailPage() {
     }, quantity)
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
+  }
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated || !product || favLoading) return
+    setFavLoading(true)
+    try {
+      if (isFavorite) {
+        await storeApi.removeFavorito(product.id)
+        setIsFavorite(false)
+      } else {
+        await storeApi.addFavorito(product.id)
+        setIsFavorite(true)
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setFavLoading(false)
+    }
   }
 
   const telegramUrl = `https://t.me/${COMPANY.telegram}?text=${encodeURIComponent(
@@ -214,6 +236,27 @@ export default function ProductDetailPage() {
                 <div className="absolute top-4 right-4 px-4 py-2 bg-[#D4A853]/90 backdrop-blur-sm text-[#0A0A0B] text-xs font-bold rounded-full">
                   Cotizable
                 </div>
+              )}
+
+              {/* Favorite Heart */}
+              {isAuthenticated && (
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={favLoading}
+                  className={`absolute ${product.cotizable ? 'top-14' : 'top-4'} right-4 w-10 h-10 rounded-full bg-[#0A0A0B]/60 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:border-red-400/30 transition-all duration-300 z-10 disabled:opacity-50`}
+                >
+                  <motion.svg
+                    animate={isFavorite ? { scale: [1, 1.3, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                    className={`w-5 h-5 transition-colors duration-300 ${isFavorite ? 'text-red-400 fill-red-400' : 'text-[#8A8A8A]'}`}
+                    viewBox="0 0 24 24"
+                    fill={isFavorite ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </motion.svg>
+                </button>
               )}
             </div>
 

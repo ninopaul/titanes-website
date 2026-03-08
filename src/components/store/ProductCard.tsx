@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
 import { formatBs } from '@/hooks/useTasaBcv'
+import { useAuth } from '@/lib/auth-context'
+import storeApi from '@/lib/store-api'
 
 interface ProductCardProps {
   product: {
@@ -19,11 +21,38 @@ interface ProductCardProps {
   }
   index?: number
   tasa_bcv?: number
+  isFavorite?: boolean
+  onFavoriteToggle?: (productId: number, isFav: boolean) => void
 }
 
-export default function ProductCard({ product, index = 0, tasa_bcv }: ProductCardProps) {
+export default function ProductCard({ product, index = 0, tasa_bcv, isFavorite = false, onFavoriteToggle }: ProductCardProps) {
   const { addItem } = useCart()
+  const { isAuthenticated } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
+  const [isFav, setIsFav] = useState(isFavorite)
+  const [favLoading, setFavLoading] = useState(false)
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isAuthenticated || favLoading) return
+    setFavLoading(true)
+    try {
+      if (isFav) {
+        await storeApi.removeFavorito(product.id)
+        setIsFav(false)
+        onFavoriteToggle?.(product.id, false)
+      } else {
+        await storeApi.addFavorito(product.id)
+        setIsFav(true)
+        onFavoriteToggle?.(product.id, true)
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setFavLoading(false)
+    }
+  }
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -78,6 +107,27 @@ export default function ProductCard({ product, index = 0, tasa_bcv }: ProductCar
                   {product.categoria_nombre}
                 </span>
               </div>
+            )}
+
+            {/* Favorite Heart */}
+            {isAuthenticated && (
+              <button
+                onClick={handleToggleFavorite}
+                disabled={favLoading}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#0A0A0B]/60 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:border-red-400/30 transition-all duration-300 z-10 disabled:opacity-50"
+              >
+                <motion.svg
+                  animate={isFav ? { scale: [1, 1.3, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                  className={`w-4 h-4 transition-colors duration-300 ${isFav ? 'text-red-400 fill-red-400' : 'text-[#8A8A8A]'}`}
+                  viewBox="0 0 24 24"
+                  fill={isFav ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </motion.svg>
+              </button>
             )}
 
             {/* Quick add button */}
