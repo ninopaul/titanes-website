@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { GoogleLogin } from '@react-oauth/google'
+import Navbar from '@/components/Navbar'
 
 export default function RegistroClient() {
   const router = useRouter()
@@ -68,6 +69,8 @@ export default function RegistroClient() {
   }
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-6 py-12">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#D4A853]/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -223,7 +226,8 @@ export default function RegistroClient() {
             </motion.button>
           </form>
 
-          {/* Google OAuth */}
+          {/* Google OAuth — only show if client ID is configured */}
+          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
           <div className="mt-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="flex-1 h-px bg-white/10" />
@@ -255,6 +259,7 @@ export default function RegistroClient() {
               />
             </div>
           </div>
+          )}
         </div>
 
         <p className="text-center text-[#8A8A8A] text-sm mt-6">
@@ -265,5 +270,6 @@ export default function RegistroClient() {
         </p>
       </motion.div>
     </main>
+    </>
   )
 }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
+import Navbar from '@/components/Navbar'
 
 const DEMO_ORDERS = [
   { id: 1001, fecha: '2026-03-04', estado: 'en_produccion', total: 125.00, items: 3 },
@@ -66,6 +67,8 @@ export default function CuentaClient() {
   const lastOrder = orders[0]
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Nav */}
       <div className="fixed top-6 left-6 z-50">
@@ -216,7 +219,7 @@ export default function CuentaClient() {
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-[#FAFAFA] font-mono text-sm">${order.total.toFixed(2)}</span>
+                          <span className="text-[#FAFAFA] font-mono text-sm">${Number(order.total || 0).toFixed(2)}</span>
                           <svg className="w-4 h-4 text-[#6A6A6A] group-hover:text-[#D4A853] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
@@ -241,5 +244,6 @@ export default function CuentaClient() {
         </div>
       </div>
     </main>
+    </>
   )
 }

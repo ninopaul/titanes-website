@@ -6,6 +6,7 @@ import Link from 'next/link'
 import storeApi from '@/lib/store-api'
 import ProductCard from '@/components/store/ProductCard'
 import { useTasaBcv } from '@/hooks/useTasaBcv'
+import Navbar from '@/components/Navbar'
 
 // Fallback demo data for when API is not available
 interface Category {
@@ -163,6 +164,8 @@ export default function TiendaClient() {
   }, [activeCategory, search, ordering, page, apiAvailable])
 
   return (
+    <>
+    <Navbar />
     <main className="relative min-h-screen bg-[#0A0A0B]">
       {/* Back Navigation */}
       <div className="fixed top-6 left-6 z-50">
@@ -464,5 +467,6 @@ export default function TiendaClient() {
         </div>
       )}
     </main>
+    </>
   )
 }

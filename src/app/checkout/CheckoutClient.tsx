@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/components/store/CartProvider'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
+import Navbar from '@/components/Navbar'
 
 interface WebMetodoPago {
   id: number
@@ -108,7 +109,7 @@ export default function CheckoutClient() {
   }, [isAuthenticated, authLoading, router])
 
   const subtotal = getTotal()
-  const shippingCost = selectedShipping?.precio_usd || 0
+  const shippingCost = Number(selectedShipping?.precio_usd) || 0
   const totalUsd = subtotal + shippingCost
   const tasaBcv = siteConfig.tasa_bcv
   const totalBs = tasaBcv > 0 ? totalUsd * tasaBcv : 0
@@ -283,6 +284,8 @@ export default function CheckoutClient() {
   const selectedPaymentMethod = siteConfig.metodos_pago.find(m => m.tipo === paymentMethod)
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Navigation */}
       <div className="fixed top-6 left-6 z-50">
@@ -393,7 +396,7 @@ export default function CheckoutClient() {
                           )}
                         </div>
                         <span className="text-[#8A8A8A] text-sm font-mono">
-                          {envio.precio_usd === 0 ? 'Gratis' : `$${envio.precio_usd.toFixed(2)}`}
+                          {Number(envio.precio_usd) === 0 ? 'Gratis' : `$${Number(envio.precio_usd).toFixed(2)}`}
                         </span>
                       </div>
                     </button>
@@ -648,5 +651,6 @@ export default function CheckoutClient() {
         </AnimatePresence>
       </div>
     </main>
+    </>
   )
 }

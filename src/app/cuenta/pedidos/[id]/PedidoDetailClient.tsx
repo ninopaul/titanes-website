@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
 import OrderTracker from '@/components/store/OrderTracker'
+import Navbar from '@/components/Navbar'
 
 const DEMO_ORDER = {
   id: 1001,
@@ -72,6 +73,8 @@ export default function PedidoDetailClient() {
   }
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Nav */}
       <div className="fixed top-6 left-6 z-50">
@@ -143,11 +146,11 @@ export default function PedidoDetailClient() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[#FAFAFA] text-sm font-medium truncate">{item.nombre}</p>
                   <p className="text-[#8A8A8A] text-xs">
-                    {item.cantidad} x ${item.precio.toFixed(2)}
+                    {item.cantidad} x ${Number(item.precio || 0).toFixed(2)}
                   </p>
                 </div>
                 <span className="text-[#FAFAFA] font-mono text-sm font-bold">
-                  ${(item.cantidad * item.precio).toFixed(2)}
+                  ${(item.cantidad * Number(item.precio || 0)).toFixed(2)}
                 </span>
               </div>
             ))}
@@ -157,15 +160,15 @@ export default function PedidoDetailClient() {
           <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-[#8A8A8A]">Subtotal</span>
-              <span className="text-[#FAFAFA] font-mono">${order.subtotal.toFixed(2)}</span>
+              <span className="text-[#FAFAFA] font-mono">${Number(order.subtotal || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[#8A8A8A]">Envio</span>
-              <span className="text-[#FAFAFA] font-mono">{order.envio === 0 ? 'Gratis' : `$${order.envio.toFixed(2)}`}</span>
+              <span className="text-[#FAFAFA] font-mono">{Number(order.envio || 0) === 0 ? 'Gratis' : `$${Number(order.envio).toFixed(2)}`}</span>
             </div>
             <div className="flex justify-between text-sm font-bold pt-2 border-t border-white/5">
               <span className="text-[#FAFAFA]">Total</span>
-              <span className="text-[#D4A853] text-lg font-mono">${order.total.toFixed(2)}</span>
+              <span className="text-[#D4A853] text-lg font-mono">${Number(order.total || 0).toFixed(2)}</span>
             </div>
           </div>
         </motion.div>
@@ -201,5 +204,6 @@ export default function PedidoDetailClient() {
         </div>
       </div>
     </main>
+    </>
   )
 }

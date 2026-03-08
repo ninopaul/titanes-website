@@ -9,6 +9,7 @@ import { useCart } from '@/components/store/CartProvider'
 import ProductCard from '@/components/store/ProductCard'
 import { COMPANY } from '@/lib/constants'
 import { useTasaBcv, formatBs } from '@/hooks/useTasaBcv'
+import Navbar from '@/components/Navbar'
 
 interface ProductOption {
   nombre: string
@@ -80,7 +81,7 @@ export default function ProductDetailPage() {
           descripcion: data.descripcion || '',
           precio: precioRaw && precioRaw > 0 ? precioRaw : null,
           imagen: data.imagen_principal_url || data.imagen || null,
-          imagenes: data.galeria || data.imagenes || [],
+          imagenes: data.galeria_urls || data.galeria || data.imagenes || [],
           categoria_nombre: data.categoria_nombre,
           cotizable: data.cotizable ?? false,
           requiere_archivo: data.requiere_archivo ?? false,
@@ -150,6 +151,8 @@ export default function ProductDetailPage() {
     : [product.imagen].filter(Boolean) as string[]
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Navigation */}
       <div className="fixed top-6 left-6 z-50">
@@ -256,11 +259,6 @@ export default function ProductDetailPage() {
               {product.nombre}
             </h1>
 
-            {/* Description */}
-            <p className="text-[#8A8A8A] leading-relaxed mb-6">
-              {product.descripcion}
-            </p>
-
             {/* Product Options */}
             {product.opciones && product.opciones.length > 0 && (
               <div className="space-y-4 mb-6">
@@ -301,12 +299,19 @@ export default function ProductDetailPage() {
             ) : (
               <div className="mb-6">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-[#D4A853] text-3xl font-black font-mono">${product.precio.toFixed(2)}</span>
+                  <span className="text-[#D4A853] text-3xl font-black font-mono">
+                    ${(Number(product.precio) * quantity).toFixed(2)}
+                  </span>
                   <span className="text-[#8A8A8A] text-sm">USD</span>
                 </div>
+                {quantity > 1 && (
+                  <p className="text-[#6A6A6A] text-xs mt-1">
+                    {quantity} × ${Number(product.precio).toFixed(2)} c/u
+                  </p>
+                )}
                 {product.precio && tasa_bcv > 0 && (
                   <p className="text-[#8A8A8A] text-sm mt-1">
-                    {formatBs(product.precio, tasa_bcv)}
+                    {formatBs(product.precio * quantity, tasa_bcv)}
                   </p>
                 )}
               </div>
@@ -410,6 +415,35 @@ export default function ProductDetailPage() {
           </motion.div>
         </div>
 
+        {/* Descripcion - Seccion completa estilo MercadoLibre */}
+        {product.descripcion && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-16"
+          >
+            <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden">
+              {/* Header */}
+              <div className="px-8 py-5 border-b border-white/5">
+                <h2
+                  className="text-xl font-bold text-[#FAFAFA]"
+                  style={{ fontFamily: 'var(--font-clash-display)' }}
+                >
+                  Descripcion
+                </h2>
+              </div>
+              {/* Body */}
+              <div className="px-8 py-6">
+                <div className="text-[#B0B0B0] leading-relaxed text-[15px] whitespace-pre-line max-w-3xl">
+                  {product.descripcion}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Related Products */}
         {related.length > 0 && (
           <motion.div
@@ -434,5 +468,6 @@ export default function ProductDetailPage() {
         )}
       </div>
     </main>
+    </>
   )
 }

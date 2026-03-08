@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import storeApi from '@/lib/store-api'
+import Navbar from '@/components/Navbar'
 
 export default function PerfilClient() {
   const router = useRouter()
@@ -94,6 +95,8 @@ export default function PerfilClient() {
   }
 
   return (
+    <>
+    <Navbar />
     <main className="min-h-screen bg-[#0A0A0B]">
       {/* Back Nav */}
       <div className="fixed top-6 left-6 z-50">
@@ -237,5 +240,6 @@ export default function PerfilClient() {
         </motion.form>
       </div>
     </main>
+    </>
   )
 }
