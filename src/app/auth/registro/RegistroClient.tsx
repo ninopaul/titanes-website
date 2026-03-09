@@ -255,7 +255,6 @@ export default function RegistroClient() {
                 size="large"
                 width="350"
                 text="signup_with"
-                locale="es"
               />
             </div>
           </div>
