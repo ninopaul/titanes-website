@@ -559,7 +559,6 @@ export default function LoginClient() {
                     size="large"
                     width="350"
                     text="continue_with"
-                    locale="es"
                   />
                 </div>
               </div>
