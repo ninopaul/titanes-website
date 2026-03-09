@@ -25,9 +25,9 @@ const DEMO_ORDER = {
     confirmado: '04/03 11:15 AM',
   },
   items: [
-    { id: 1, nombre: 'Banner 13oz por Metro', cantidad: 5, precio: 12.50, imagen: null },
-    { id: 2, nombre: 'Vinil Adhesivo por M2', cantidad: 2, precio: 15.00, imagen: null },
-    { id: 3, nombre: 'Laminado Mate', cantidad: 5, precio: 2.00, imagen: null },
+    { id: 1, nombre: 'Banner 13oz por Metro', cantidad: 5, precio: 12.50, imagen: null as string | null, unidad_medida: 'ml' as string, medidas: [] as any[], item_subtotal: 62.50 },
+    { id: 2, nombre: 'Vinil Adhesivo por M2', cantidad: 2, precio: 15.00, imagen: null as string | null, unidad_medida: 'mts2' as string, medidas: [] as any[], item_subtotal: 30.00 },
+    { id: 3, nombre: 'Laminado Mate', cantidad: 5, precio: 2.00, imagen: null as string | null, unidad_medida: 'unidad' as string, medidas: [] as any[], item_subtotal: 10.00 },
   ],
 }
 
