@@ -176,9 +176,9 @@ export default function ProductCard({ product, index = 0, tasa_bcv, isFavorite =
                   <span className="text-[#D4A853] font-bold text-lg font-mono">
                     ${Number(product.precio).toFixed(2)}
                   </span>
-                  {product.precio && tasa_bcv > 0 && (
+                  {product.precio && (tasa_bcv ?? 0) > 0 && (
                     <span className="text-[#8A8A8A] text-xs block mt-0.5">
-                      {formatBs(product.precio, tasa_bcv)}
+                      {formatBs(product.precio, tasa_bcv!)}
                     </span>
                   )}
                 </div>
