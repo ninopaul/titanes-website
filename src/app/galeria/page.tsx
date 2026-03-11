@@ -1,95 +1,33 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import AnimatedBackground from '@/components/AnimatedBackground'
+import storeApi from '@/lib/store-api'
 
-// ═══ Gallery Categories ═══
-const CATEGORIES = [
-  'Todos',
-  'Gran Formato',
-  'Impresión UV',
-  'Corte Láser',
-  'Sublimación',
-  'Fachadas',
-  'Corpóreos',
-  'Señalética',
-  'Rotulado Vehicular',
-  'CNC',
-  'Digital',
-]
+// ═══ Types ═══
+interface PortafolioItem {
+  id: number
+  titulo: string
+  imagen: string
+  imagen_url: string
+  categoria: string
+  descripcion: string
+  visible: boolean
+  orden: number
+  destacado: boolean
+  mostrar_en_inicio: boolean
+  created_at: string
+}
 
-// ═══ Gallery Items (muestra representativa de 200+ proyectos ejecutados) ═══
-const GALLERY_ITEMS = [
-  // Gran Formato (8)
-  { id: 1, title: 'Valla Publicitaria 12m', category: 'Gran Formato', aspect: 'wide', color: '#1a2332' },
-  { id: 2, title: 'Banner Evento Deportivo', category: 'Gran Formato', aspect: 'tall', color: '#2a1a1a' },
-  { id: 3, title: 'Lona Frontlit Iluminada', category: 'Gran Formato', aspect: 'square', color: '#1a1a2a' },
-  { id: 4, title: 'Microperforado Vitrina', category: 'Gran Formato', aspect: 'wide', color: '#221a2a' },
-  { id: 5, title: 'Pendón Retráctil', category: 'Gran Formato', aspect: 'tall', color: '#2a221a' },
-  { id: 6, title: 'Backing Corporativo', category: 'Gran Formato', aspect: 'wide', color: '#1a2a22' },
-  { id: 7, title: 'Mural Decorativo 8m', category: 'Gran Formato', aspect: 'tall', color: '#222a1a' },
-  { id: 8, title: 'Vinil Adhesivo Flota', category: 'Gran Formato', aspect: 'square', color: '#1a1a32' },
-  // UV (6)
-  { id: 9, title: 'Impresión Directa Acrílico', category: 'Impresión UV', aspect: 'square', color: '#2a2a1a' },
-  { id: 10, title: 'Caja de Luz LED', category: 'Impresión UV', aspect: 'wide', color: '#1a2a2a' },
-  { id: 11, title: 'Señalética Hospital', category: 'Impresión UV', aspect: 'tall', color: '#2a1a22' },
-  { id: 12, title: 'Display POP Acrílico', category: 'Impresión UV', aspect: 'square', color: '#1a221a' },
-  { id: 13, title: 'Panel Fotográfico PVC', category: 'Impresión UV', aspect: 'wide', color: '#221a1a' },
-  { id: 14, title: 'Reloj Personalizado UV', category: 'Impresión UV', aspect: 'square', color: '#1a1a22' },
-  // Láser (6)
-  { id: 15, title: 'Trofeos Corporativos', category: 'Corte Láser', aspect: 'square', color: '#2a1a2a' },
-  { id: 16, title: 'Grabado Placas Industriales', category: 'Corte Láser', aspect: 'wide', color: '#1a2232' },
-  { id: 17, title: 'Corte Acrílico Decorativo', category: 'Corte Láser', aspect: 'tall', color: '#322a1a' },
-  { id: 18, title: 'Sellos Personalizados', category: 'Corte Láser', aspect: 'square', color: '#1a322a' },
-  { id: 19, title: 'Invitaciones Láser', category: 'Corte Láser', aspect: 'wide', color: '#2a1a32' },
-  { id: 20, title: 'Porta Retratos MDF', category: 'Corte Láser', aspect: 'tall', color: '#321a2a' },
-  // Sublimación (6)
-  { id: 21, title: 'Uniforme Deportivo Completo', category: 'Sublimación', aspect: 'tall', color: '#1a2a1a' },
-  { id: 22, title: 'Set Deportivo Equipo', category: 'Sublimación', aspect: 'wide', color: '#2a1a1a' },
-  { id: 23, title: 'Camisetas Promocionales', category: 'Sublimación', aspect: 'square', color: '#1a1a2a' },
-  { id: 24, title: 'Telas Lycra Full Print', category: 'Sublimación', aspect: 'wide', color: '#2a2a1a' },
-  { id: 25, title: 'Gorras Sublimadas', category: 'Sublimación', aspect: 'square', color: '#1a2a2a' },
-  { id: 26, title: 'Franelas Dry Fit', category: 'Sublimación', aspect: 'tall', color: '#2a1a2a' },
-  // Fachadas (6)
-  { id: 27, title: 'Fachada Centro Comercial', category: 'Fachadas', aspect: 'tall', color: '#1a2332' },
-  { id: 28, title: 'Caja de Luz Doble Cara', category: 'Fachadas', aspect: 'wide', color: '#2a1a22' },
-  { id: 29, title: 'Fachada Restaurante', category: 'Fachadas', aspect: 'square', color: '#221a2a' },
-  { id: 30, title: 'Tótem Publicitario', category: 'Fachadas', aspect: 'tall', color: '#1a2a22' },
-  { id: 31, title: 'Fachada Farmacia', category: 'Fachadas', aspect: 'wide', color: '#2a221a' },
-  { id: 32, title: 'Fachada Agencia Automotriz', category: 'Fachadas', aspect: 'tall', color: '#222a1a' },
-  // Corpóreos (6)
-  { id: 33, title: 'Logo 3D Oficina', category: 'Corpóreos', aspect: 'square', color: '#1a1a32' },
-  { id: 34, title: 'Letras MDF Iluminadas', category: 'Corpóreos', aspect: 'wide', color: '#321a1a' },
-  { id: 35, title: 'Logo Acrílico LED', category: 'Corpóreos', aspect: 'tall', color: '#1a321a' },
-  { id: 36, title: 'Letras PVC Espumado', category: 'Corpóreos', aspect: 'square', color: '#1a1a32' },
-  { id: 37, title: 'Números Metálicos', category: 'Corpóreos', aspect: 'wide', color: '#321a2a' },
-  { id: 38, title: 'Logo Acero Inoxidable', category: 'Corpóreos', aspect: 'square', color: '#2a321a' },
-  // Señalética (5)
-  { id: 39, title: 'Sistema Señalización Hospital', category: 'Señalética', aspect: 'wide', color: '#1a2a32' },
-  { id: 40, title: 'Señalética Centro Comercial', category: 'Señalética', aspect: 'tall', color: '#322a1a' },
-  { id: 41, title: 'Directorio Edificio', category: 'Señalética', aspect: 'square', color: '#1a322a' },
-  { id: 42, title: 'Señales de Seguridad', category: 'Señalética', aspect: 'wide', color: '#2a1a32' },
-  { id: 43, title: 'Plano Evacuación', category: 'Señalética', aspect: 'square', color: '#321a2a' },
-  // Rotulado (5)
-  { id: 44, title: 'Wrapping Completo Camioneta', category: 'Rotulado Vehicular', aspect: 'wide', color: '#2a2232' },
-  { id: 45, title: 'Flota Delivery Rotulada', category: 'Rotulado Vehicular', aspect: 'tall', color: '#32221a' },
-  { id: 46, title: 'Rotulado Lateral Autobús', category: 'Rotulado Vehicular', aspect: 'wide', color: '#1a3222' },
-  { id: 47, title: 'Moto Delivery Branding', category: 'Rotulado Vehicular', aspect: 'square', color: '#22321a' },
-  { id: 48, title: 'Van Corporativa Full Wrap', category: 'Rotulado Vehicular', aspect: 'wide', color: '#321a22' },
-  // CNC (3)
-  { id: 49, title: 'Letrero Fresado 3D', category: 'CNC', aspect: 'wide', color: '#2a1a2a' },
-  { id: 50, title: 'Piezas Industriales', category: 'CNC', aspect: 'square', color: '#1a2a1a' },
-  { id: 51, title: 'Exhibidor Fresado MDF', category: 'CNC', aspect: 'tall', color: '#2a2a1a' },
-  // Digital (3)
-  { id: 52, title: 'Catálogo Corporativo', category: 'Digital', aspect: 'tall', color: '#1a1a2a' },
-  { id: 53, title: 'Tarjetas Barniz Selectivo', category: 'Digital', aspect: 'square', color: '#2a1a1a' },
-  { id: 54, title: 'Folleto Tríptico Premium', category: 'Digital', aspect: 'wide', color: '#1a2a2a' },
-]
-
-function GalleryCard({ item, index }: { item: typeof GALLERY_ITEMS[0]; index: number }) {
-  const height = item.aspect === 'tall' ? 'h-80' : item.aspect === 'wide' ? 'h-52' : 'h-64'
+function GalleryCard({ item, index }: { item: PortafolioItem; index: number }) {
+  // Visual variety: alternate aspect ratios based on position
+  const aspects = ['wide', 'tall', 'square', 'wide', 'tall', 'square', 'tall', 'wide', 'square', 'wide', 'square', 'tall']
+  const aspect = aspects[index % aspects.length]
+  const height = aspect === 'tall' ? 'h-80' : aspect === 'wide' ? 'h-52' : 'h-64'
+  const imgSrc = item.imagen_url || item.imagen || ''
 
   return (
     <motion.div
@@ -100,18 +38,26 @@ function GalleryCard({ item, index }: { item: typeof GALLERY_ITEMS[0]; index: nu
       transition={{ duration: 0.4, delay: Math.min(index * 0.02, 0.3) }}
       className={`break-inside-avoid relative ${height} rounded-xl overflow-hidden group cursor-pointer`}
     >
-      {/* Placeholder background */}
-      <div
-        className="absolute inset-0 transition-transform duration-700 group-hover:scale-110"
-        style={{ backgroundColor: item.color }}
-      >
-        <div className="absolute inset-0 diagonal-lines opacity-30" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white/10 text-5xl font-black" style={{ fontFamily: 'var(--font-clash-display)' }}>
-            {item.id.toString().padStart(2, '0')}
-          </span>
+      {/* Real image or placeholder */}
+      {imgSrc ? (
+        <Image
+          src={imgSrc}
+          alt={item.titulo}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          unoptimized
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[#1a2332] transition-transform duration-700 group-hover:scale-110">
+          <div className="absolute inset-0 diagonal-lines opacity-30" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-white/10 text-5xl font-black" style={{ fontFamily: 'var(--font-clash-display)' }}>
+              {(index + 1).toString().padStart(2, '0')}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Hover Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -121,11 +67,13 @@ function GalleryCard({ item, index }: { item: typeof GALLERY_ITEMS[0]; index: nu
 
       {/* Info */}
       <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-        <span className="inline-block px-2.5 py-1 bg-[#D4A853]/20 text-[#D4A853] text-[9px] font-semibold tracking-wider uppercase rounded-full border border-[#D4A853]/30 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100 mb-1.5">
-          {item.category}
-        </span>
+        {item.categoria && (
+          <span className="inline-block px-2.5 py-1 bg-[#D4A853]/20 text-[#D4A853] text-[9px] font-semibold tracking-wider uppercase rounded-full border border-[#D4A853]/30 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100 mb-1.5">
+            {item.categoria}
+          </span>
+        )}
         <h3 className="text-[#FAFAFA] font-bold text-sm opacity-0 group-hover:opacity-100 transition-all duration-500 delay-150" style={{ fontFamily: 'var(--font-clash-display)' }}>
-          {item.title}
+          {item.titulo}
         </h3>
       </div>
 
@@ -143,14 +91,38 @@ export default function GaleriaPage() {
   const headerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(headerRef, { once: true })
   const [activeFilter, setActiveFilter] = useState('Todos')
+  const [items, setItems] = useState<PortafolioItem[]>([])
+  const [categories, setCategories] = useState<string[]>(['Todos'])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const res = await storeApi.getPortafolio() as { success: boolean; data: PortafolioItem[] }
+        if (res.success && Array.isArray(res.data)) {
+          const sorted = [...res.data].sort((a, b) => a.orden - b.orden)
+          setItems(sorted)
+
+          // Extract unique categories from real data
+          const cats = ['Todos', ...new Set(sorted.map(i => i.categoria).filter(Boolean))]
+          setCategories(cats)
+        }
+      } catch (err) {
+        console.error('Error fetching galeria:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchGallery()
+  }, [])
 
   const filtered = activeFilter === 'Todos'
-    ? GALLERY_ITEMS
-    : GALLERY_ITEMS.filter(item => item.category === activeFilter)
+    ? items
+    : items.filter(item => item.categoria === activeFilter)
 
   const getCategoryCount = (cat: string) => {
-    if (cat === 'Todos') return GALLERY_ITEMS.length
-    return GALLERY_ITEMS.filter(item => item.category === cat).length
+    if (cat === 'Todos') return items.length
+    return items.filter(item => item.categoria === cat).length
   }
 
   return (
@@ -222,45 +194,47 @@ export default function GaleriaPage() {
             <span className="text-[#8A8A8A] text-sm ml-2">proyectos ejecutados</span>
           </div>
           <div className="px-6 py-3 bg-[#141416]/60 backdrop-blur-sm border border-white/5 rounded-2xl">
-            <span className="text-[#FAFAFA] text-3xl font-black font-mono">{CATEGORIES.length - 1}</span>
+            <span className="text-[#FAFAFA] text-3xl font-black font-mono">{categories.length - 1}</span>
             <span className="text-[#8A8A8A] text-sm ml-2">categorías</span>
           </div>
         </motion.div>
       </div>
 
       {/* Sticky Filters */}
-      <div className="sticky top-0 z-40 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 py-4">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex flex-wrap items-center justify-center gap-2"
-          >
-            {CATEGORIES.map((cat) => {
-              const count = getCategoryCount(cat)
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveFilter(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
-                    activeFilter === cat
-                      ? 'bg-[#D4A853] text-[#0A0A0B] shadow-[0_0_20px_rgba(212,168,83,0.3)]'
-                      : 'bg-white/5 text-[#8A8A8A] hover:bg-white/10 hover:text-[#FAFAFA] border border-white/5'
-                  }`}
-                >
-                  {cat}
-                  <span className={`text-[10px] font-mono ${
-                    activeFilter === cat ? 'text-[#0A0A0B]/60' : 'text-[#8A8A8A]/50'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              )
-            })}
-          </motion.div>
+      {categories.length > 1 && (
+        <div className="sticky top-0 z-40 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 py-4">
+          <div className="max-w-7xl mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-wrap items-center justify-center gap-2"
+            >
+              {categories.map((cat) => {
+                const count = getCategoryCount(cat)
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveFilter(cat)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+                      activeFilter === cat
+                        ? 'bg-[#D4A853] text-[#0A0A0B] shadow-[0_0_20px_rgba(212,168,83,0.3)]'
+                        : 'bg-white/5 text-[#8A8A8A] hover:bg-white/10 hover:text-[#FAFAFA] border border-white/5'
+                    }`}
+                  >
+                    {cat}
+                    <span className={`text-[10px] font-mono ${
+                      activeFilter === cat ? 'text-[#0A0A0B]/60' : 'text-[#8A8A8A]/50'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+            </motion.div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Results Count */}
       <div className="max-w-7xl mx-auto px-6 pt-8 pb-4">
@@ -270,45 +244,73 @@ export default function GaleriaPage() {
           animate={{ opacity: 1 }}
           className="text-[#8A8A8A]/60 text-sm"
         >
-          Mostrando <span className="text-[#D4A853] font-mono font-bold">{filtered.length}</span> {filtered.length === 1 ? 'proyecto' : 'proyectos'}
-          {activeFilter !== 'Todos' && (
-            <> en <span className="text-[#FAFAFA]">{activeFilter}</span></>
+          {loading ? (
+            'Cargando proyectos...'
+          ) : (
+            <>
+              Mostrando <span className="text-[#D4A853] font-mono font-bold">{filtered.length}</span> {filtered.length === 1 ? 'proyecto' : 'proyectos'}
+              {activeFilter !== 'Todos' && (
+                <> en <span className="text-[#FAFAFA]">{activeFilter}</span></>
+              )}
+            </>
           )}
         </motion.p>
       </div>
 
       {/* Masonry Grid */}
       <div className="max-w-7xl mx-auto px-6 pb-32">
-        <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((item, i) => (
-              <GalleryCard key={item.id} item={item} index={i} />
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-10 h-10 border-2 border-[#D4A853]/30 border-t-[#D4A853] rounded-full animate-spin" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#D4A853]/10 flex items-center justify-center">
+              <svg className="w-10 h-10 text-[#D4A853]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-[#FAFAFA] text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-clash-display)' }}>
+              Próximamente
+            </h3>
+            <p className="text-[#8A8A8A] text-sm max-w-md mx-auto">
+              Estamos preparando nuestra galería de proyectos. Pronto podrás ver más de 200 trabajos realizados.
+            </p>
+          </div>
+        ) : (
+          <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((item, i) => (
+                <GalleryCard key={item.id} item={item} index={i} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
         {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mt-20"
-        >
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#D4A853] to-transparent mx-auto mb-6" />
-          <p className="text-[#8A8A8A] text-sm mb-4">
-            ¿Tienes un proyecto en mente?
-          </p>
-          <Link href="/#contacto">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-8 py-3 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full shadow-[0_0_30px_rgba(212,168,83,0.3)] hover:shadow-[0_0_40px_rgba(212,168,83,0.5)] transition-all duration-300"
-              style={{ fontFamily: 'var(--font-clash-display)' }}
-            >
-              Solicitar Cotización
-            </motion.button>
-          </Link>
-        </motion.div>
+        {!loading && items.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mt-20"
+          >
+            <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#D4A853] to-transparent mx-auto mb-6" />
+            <p className="text-[#8A8A8A] text-sm mb-4">
+              ¿Tienes un proyecto en mente?
+            </p>
+            <Link href="/#contacto">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-8 py-3 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full shadow-[0_0_30px_rgba(212,168,83,0.3)] hover:shadow-[0_0_40px_rgba(212,168,83,0.5)] transition-all duration-300"
+                style={{ fontFamily: 'var(--font-clash-display)' }}
+              >
+                Solicitar Cotización
+              </motion.button>
+            </Link>
+          </motion.div>
+        )}
       </div>
     </main>
   )
