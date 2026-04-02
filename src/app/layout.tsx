@@ -5,6 +5,7 @@ import { AuthProvider } from '@/lib/auth-context'
 import { CompanyConfigProvider } from '@/lib/company-config'
 import GoogleOAuthWrapper from '@/components/GoogleOAuthWrapper'
 import JsonLd from '@/components/JsonLd'
+import SentryInit from './sentry-init'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -59,6 +60,7 @@ export default function RootLayout({
       <body
         className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased noise-overlay`}
       >
+        <SentryInit />
         <JsonLd />
         <CompanyConfigProvider>
           <GoogleOAuthWrapper>
