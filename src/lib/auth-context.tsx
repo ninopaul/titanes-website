@@ -19,6 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<LoginResult>
+  loginWithCedula: (nombre: string, cedula: string) => Promise<void>
   completeLoginWith2FA: (access: string, refresh: string, user: User) => void
   register: (data: { email: string; nombre: string; apellido: string; telefono: string; password: string }) => Promise<void>
   loginWithGoogle: (credential: string) => Promise<void>
@@ -132,6 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData)
   }
 
+  // Portal por cedula: sin 2FA, el backend re-valida nombre+cedula contra el ERP
+  const loginWithCedula = async (nombre: string, cedula: string) => {
+    const data = await storeApi.loginCedula({ nombre, cedula }) as unknown as {
+      access: string
+      refresh: string
+      user: User
+    }
+    storeAuth(data.access, data.refresh, data.user)
+    setUser(data.user)
+  }
+
   const register = async (regData: { email: string; nombre: string; apellido: string; telefono: string; password: string }) => {
     const data = await storeApi.registro(regData) as {
       access: string
@@ -163,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
+      loginWithCedula,
       completeLoginWith2FA,
       register,
       loginWithGoogle,

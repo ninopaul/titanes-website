@@ -37,6 +37,7 @@ export default function PedidoDetailClient() {
   const { isAuthenticated, isLoading } = useAuth()
   const orderId = params?.id
   const [order, setOrder] = useState(DEMO_ORDER)
+  const [orderLoaded, setOrderLoaded] = useState(false)
   const [orderLoading, setOrderLoading] = useState(true)
   const [comprobanteFile, setComprobanteFile] = useState<File | null>(null)
   const [comprobanteUploading, setComprobanteUploading] = useState(false)
@@ -78,9 +79,11 @@ export default function PedidoDetailClient() {
           })),
         }
         setOrder(mapped)
+        setOrderLoaded(true)
       }
     } catch {
-      // Keep demo data as fallback
+      // NO mostrar datos demo si la API falla (2026-07-07, reporte Paul:
+      // el fallback demo se veia como "ordenes desactualizadas" reales).
     } finally {
       if (showLoading) setOrderLoading(false)
     }
@@ -137,6 +140,22 @@ export default function PedidoDetailClient() {
       <main className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#D4A853] border-t-transparent rounded-full animate-spin" />
       </main>
+    )
+  }
+
+  if (!orderLoaded) {
+    return (
+      <>
+      <Navbar />
+      <main className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-[#8A8A8A] text-sm mb-3">No pudimos cargar este pedido en este momento.</p>
+          <Link href="/cuenta/pedidos" className="text-[#D4A853] text-sm hover:text-[#E8C776] transition-colors">
+            Volver a mis pedidos
+          </Link>
+        </div>
+      </main>
+      </>
     )
   }
 

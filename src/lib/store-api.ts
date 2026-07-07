@@ -194,6 +194,10 @@ class StoreAPI {
   async login(data: { email: string; password: string }) {
     return this.request('/auth/login/', { method: 'POST', body: JSON.stringify(data) });
   }
+  // Portal por cedula: nombre=usuario, cedula=contrasena (sin 2FA)
+  async loginCedula(data: { nombre: string; cedula: string }) {
+    return this.request('/auth/login-cedula/', { method: 'POST', body: JSON.stringify(data) });
+  }
   async googleLogin(credential: string) {
     return this.request('/auth/google/', { method: 'POST', body: JSON.stringify({ credential }) });
   }
@@ -222,6 +226,9 @@ class StoreAPI {
   // Pedidos
   async getMisPedidos() { return this.request('/mis-pedidos/'); }
   async getMiPedido(id: number) { return this.request(`/mis-pedidos/${id}/`); }
+  // Ordenes ERP del cliente (todas: mostrador, WhatsApp y web)
+  async getMisOrdenes() { return this.request('/mis-ordenes/'); }
+  async getMiOrden(id: number) { return this.request(`/mis-ordenes/${id}/`); }
   async crearPedido(data: Record<string, unknown>) {
     return this.request('/pedido/', { method: 'POST', body: JSON.stringify(data) });
   }

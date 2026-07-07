@@ -364,7 +364,7 @@ export default function LoginClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/cuenta'
-  const { login, completeLoginWith2FA, loginWithGoogle, isAuthenticated } = useAuth()
+  const { login, loginWithCedula, completeLoginWith2FA, loginWithGoogle, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -372,12 +372,19 @@ export default function LoginClient() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+  // Portal por cedula (consulta de ordenes): nombre=usuario, cedula=contrasena
+  const [mode, setMode] = useState<'email' | 'cedula'>('cedula')
+  const [nombre, setNombre] = useState('')
+  const [cedula, setCedula] = useState('')
+
   // 2FA state
   const [twoFAData, setTwoFAData] = useState<TwoFARequired | null>(null)
 
   useEffect(() => {
-    if (isAuthenticated) router.push(redirect)
-  }, [isAuthenticated, router, redirect])
+    // En modo cedula el destino es siempre las ordenes; este efecto es quien
+    // gana la navegacion post-login (corre tras el re-render de isAuthenticated)
+    if (isAuthenticated) router.push(mode === 'cedula' ? '/cuenta/pedidos' : redirect)
+  }, [isAuthenticated, router, redirect, mode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -398,6 +405,26 @@ export default function LoginClient() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesion')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSubmitCedula = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (!nombre.trim() || !cedula.trim()) {
+      setError('Completa tu nombre y cedula')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await loginWithCedula(nombre.trim(), cedula.trim())
+      // la navegacion la hace el useEffect de isAuthenticated (modo cedula)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al consultar')
     } finally {
       setIsLoading(false)
     }
@@ -450,16 +477,103 @@ export default function LoginClient() {
 
             {/* Card */}
             <div className="bg-[#111113] rounded-2xl border border-white/5 p-8">
+              {/* Selector de modo: consulta por cedula vs cuenta email */}
+              <div className="flex bg-white/5 rounded-full p-1 mb-6">
+                <button
+                  type="button"
+                  onClick={() => { setMode('cedula'); setError('') }}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
+                    mode === 'cedula'
+                      ? 'bg-[#D4A853] text-[#0A0A0B]'
+                      : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
+                  }`}
+                >
+                  Consultar mi Orden
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode('email'); setError('') }}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
+                    mode === 'email'
+                      ? 'bg-[#D4A853] text-[#0A0A0B]'
+                      : 'text-[#8A8A8A] hover:text-[#FAFAFA]'
+                  }`}
+                >
+                  Cuenta Email
+                </button>
+              </div>
+
               <h1
                 className="text-2xl font-black text-[#FAFAFA] text-center mb-2"
                 style={{ fontFamily: 'var(--font-clash-display)' }}
               >
-                Iniciar Sesion
+                {mode === 'cedula' ? 'Consulta tus Ordenes' : 'Iniciar Sesion'}
               </h1>
               <p className="text-[#8A8A8A] text-sm text-center mb-8">
-                Accede a tu cuenta para gestionar tus pedidos
+                {mode === 'cedula'
+                  ? 'Entra con tu nombre y cedula para ver el estatus de tus ordenes'
+                  : 'Accede a tu cuenta para gestionar tus pedidos'}
               </p>
 
+              {mode === 'cedula' && (
+              <form onSubmit={handleSubmitCedula} className="space-y-4">
+                <div>
+                  <label className="text-[#8A8A8A] text-xs font-medium mb-1.5 block">Nombre</label>
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Tu nombre o empresa"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-[#FAFAFA] placeholder-[#6A6A6A] focus:outline-none focus:border-[#D4A853]/30 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[#8A8A8A] text-xs font-medium mb-1.5 block">Cedula o RIF</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={cedula}
+                    onChange={(e) => setCedula(e.target.value)}
+                    placeholder="V-12345678"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-[#FAFAFA] placeholder-[#6A6A6A] focus:outline-none focus:border-[#D4A853]/30 transition-all"
+                  />
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                  >
+                    <p className="text-red-400 text-xs">{error}</p>
+                  </motion.div>
+                )}
+
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-[#D4A853] text-[#0A0A0B] font-bold text-sm rounded-full hover:bg-[#E8C776] transition-all duration-300 shadow-[0_0_20px_rgba(212,168,83,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ fontFamily: 'var(--font-clash-display)' }}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-[#0A0A0B] border-t-transparent rounded-full animate-spin" />
+                      Consultando...
+                    </>
+                  ) : (
+                    'Ver mis Ordenes'
+                  )}
+                </motion.button>
+
+                <p className="text-[#6A6A6A] text-[11px] text-center pt-1">
+                  Usa el nombre y la cedula con los que registraste tu orden en la tienda.
+                </p>
+              </form>
+              )}
+
+              {mode === 'email' && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-[#8A8A8A] text-xs font-medium mb-1.5 block">Email</label>
@@ -529,9 +643,10 @@ export default function LoginClient() {
                   )}
                 </motion.button>
               </form>
+              )}
 
               {/* Google OAuth — only show if client ID is configured */}
-              {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+              {mode === 'email' && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
               <div className="mt-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex-1 h-px bg-white/10" />
@@ -565,12 +680,14 @@ export default function LoginClient() {
               )}
             </div>
 
+            {mode === 'email' && (
             <p className="text-center text-[#8A8A8A] text-sm mt-6">
               No tienes cuenta?{' '}
               <Link href="/auth/registro" className="text-[#D4A853] hover:text-[#E8C776] font-medium transition-colors">
                 Registrate
               </Link>
             </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
