@@ -17,7 +17,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1/web';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && window.location.hostname.includes('titanesgraficos.com') ? 'https://api.printacloud.com/api/v1/web' : 'http://localhost:8000/api/v1/web');
 
 async function publicFetch<T>(
     endpoint: string,
