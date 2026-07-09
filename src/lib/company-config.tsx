@@ -17,6 +17,7 @@ export interface CompanyConfig {
   telegram: string
   email: string
   direccion: string
+  dominio: string
   horario: string
   instagram: string
   facebook: string
@@ -36,6 +37,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   telegram: COMPANY.telegram || '',
   email: COMPANY.email,
   direccion: COMPANY.address,
+  dominio: '',
   horario: COMPANY.hours,
   instagram: COMPANY.instagram,
   facebook: '',
@@ -87,6 +89,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
             telegram: e.telegram || d.telegram || DEFAULT_CONFIG.telegram,
             email: e.email || d.email || DEFAULT_CONFIG.email,
             direccion: e.direccion || d.direccion || DEFAULT_CONFIG.direccion,
+            dominio: e.dominio || d.dominio || DEFAULT_CONFIG.dominio,
             horario: e.horario || d.horario || DEFAULT_CONFIG.horario,
             instagram: e.instagram || d.instagram || DEFAULT_CONFIG.instagram,
             facebook: e.facebook || d.facebook || DEFAULT_CONFIG.facebook,

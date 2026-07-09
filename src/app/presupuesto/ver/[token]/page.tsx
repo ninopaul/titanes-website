@@ -14,6 +14,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { useCompanyConfig } from '@/lib/company-config';
 
 // ---------------------------------------------------------------------------
 // API helper (no auth, public endpoints)
@@ -308,6 +309,7 @@ function ResponseBadge({ respuesta }: { respuesta: string }) {
 
 export default function PresupuestoVerPage() {
     const params = useParams();
+    const company = useCompanyConfig();
     const token = params?.token as string;
 
     const [state, setState] = useState<PageState>('loading');
@@ -811,14 +813,18 @@ export default function PresupuestoVerPage() {
             >
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-2">
                     <p className="text-sm font-semibold" style={{ color: '#f0c040' }}>
-                        Titanes Gráficos C.A.
+                        {company.nombre}
                     </p>
-                    <p className="text-xs" style={{ color: '#50506a' }}>
-                        Imprenta Digital &middot; Gran Formato &middot; Publicidad
-                    </p>
-                    <p className="text-xs" style={{ color: '#40405a' }}>
-                        Valencia, Venezuela &middot; titanesgraficos.com.ve
-                    </p>
+                    {company.slogan && (
+                        <p className="text-xs" style={{ color: '#50506a' }}>
+                            {company.slogan}
+                        </p>
+                    )}
+                    {(company.direccion || company.dominio) && (
+                        <p className="text-xs" style={{ color: '#40405a' }}>
+                            {[company.direccion, company.dominio].filter(Boolean).join(' · ')}
+                        </p>
+                    )}
                 </div>
             </footer>
 
