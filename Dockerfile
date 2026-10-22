@@ -1,4 +1,7 @@
-FROM node:22-alpine AS builder
+# Version exacta de Node a proposito: 22.23.4 trae el parche de seguridad del 21-oct-2026
+# (CVE-2026-111497, Brotli). Con la etiqueta flotante "22-alpine" Docker puede reusar la imagen
+# vieja que ya tiene en cache y el parche no entra.
+FROM node:22.23.4-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:22-alpine AS runner
+FROM node:22.23.4-alpine AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
