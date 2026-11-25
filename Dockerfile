@@ -1,13 +1,12 @@
-# Version exacta de Node a proposito: 22.23.4 trae el parche de seguridad del 21-oct-2026
-# (CVE-2026-111497, Brotli). Con la etiqueta flotante "22-alpine" Docker puede reusar la imagen
-# vieja que ya tiene en cache y el parche no entra.
-FROM node:22.23.4-alpine AS builder
+# Keep the build and the deployed runtime on the same patched Node version.
+ARG NODE_IMAGE=node:22.23.5-alpine
+FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm ci || npm install
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund --maxsockets=8 --fetch-retries=4
 
 # Build args for env vars needed at build time
 ARG NEXT_PUBLIC_API_URL
@@ -20,10 +19,11 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:22.23.4-alpine AS runner
+FROM ${NODE_IMAGE} AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 # Copy standalone output
 COPY --from=builder /app/.next/standalone ./
